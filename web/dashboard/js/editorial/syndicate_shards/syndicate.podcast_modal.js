@@ -5,7 +5,7 @@
  */
 
 (function () {
-    let _currentRelPath = '', _currentScript = null, _currentAudioInfo = null;
+    let _currentRelPath = '', _currentScript = null, _currentAudioInfo = null, _availableLangs = new Set();
     let _selectedLang = 'zh', _selectedStyle = 'tech_deep', _selectedBgm = 'cyber_ambient', _isProcessing = false;
 
     const _esc = (s) => (s === null || s === undefined ? '' : String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'));
@@ -80,6 +80,7 @@
             const data = await resp.json();
             if (!resp.ok || data.status !== 'success') throw new Error(data.detail || '音频合成失败');
             _currentAudioInfo = data.data;
+            _availableLangs.add(_selectedLang); _renderPodcastLangSelector();
             if (typeof window.showToast === 'function') {
                 if (data.data?.fallback_reason) window.showToast(`⚠️ ${data.data.fallback_reason}`, 'warning');
                 else window.showToast(`🎉 播客单轨音频合成成功 (${data.data?.actual_provider || 'edge'})！`, 'success');
@@ -126,7 +127,8 @@
                 method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify({ rel_path: _currentRelPath, lang: _selectedLang, style: _selectedStyle, max_turns: 10, use_ai: !!useAi, focus_prompt: focusVal || null, host_a_name: hostA || null, host_b_name: hostB || null })
             });
-            const audioReq = useAi ? Promise.resolve(null) : fetch(`/api/podcast/info?rel_path=${encodeURIComponent(_currentRelPath)}&lang=${_selectedLang}&style=${_selectedStyle}`).then((r) => r.json()).catch(() => null);
+            const langList = window.getEnabledPodcastLangs().join(',');
+            const audioReq = useAi ? Promise.resolve(null) : fetch(`/api/podcast/info?rel_path=${encodeURIComponent(_currentRelPath)}&lang=${_selectedLang}&style=${_selectedStyle}&langs=${encodeURIComponent(langList)}`).then((r) => r.json()).catch(() => null);
 
             const [sResp, aData] = await Promise.all([scriptReq, audioReq]);
             const sData = await sResp.json();
@@ -134,6 +136,7 @@
             _currentScript = sData.data;
             _currentScript.is_ai_generated = !!useAi;
             _currentAudioInfo = (aData && aData.exists && aData.data) ? aData.data : null;
+            if (aData && Array.isArray(aData.available_langs)) { _availableLangs = new Set(aData.available_langs); _renderPodcastLangSelector(); }
 
             if (useAi) {
                 const bar = document.getElementById('podcast-progress-bar'), pct = document.getElementById('podcast-progress-pct'), msg = document.getElementById('podcast-progress-msg');
@@ -215,7 +218,7 @@
         if (!box) return;
         const langs = window.getEnabledPodcastLangs();
         if (!langs.includes(_selectedLang)) _selectedLang = langs[0] || 'zh';
-        const lbl = (c) => _LANG_LABELS[c] || c.toUpperCase();
+        const lbl = (c) => `${_LANG_LABELS[c] || c.toUpperCase()}${_availableLangs.has(c) ? ' 🎧' : ''}`;
         if (langs.length <= 3) {
             box.innerHTML = langs.map((v) => `<button type="button" class="podcast-pill-btn ${v===_selectedLang?'active':''}" data-val="${v}" onclick="window.switchPodcastLang('${v}')">${lbl(v)}</button>`).join('');
             return;

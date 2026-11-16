@@ -164,20 +164,20 @@
         overlay.id = 'smart-paste-modal-overlay';
         overlay.style.cssText = 'position: fixed; inset: 0; z-index: 1000010; background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center;';
         overlay.innerHTML = `
-            <div style="background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(0, 242, 254, 0.35); border-radius: 12px; width: 520px; max-width: 90vw; padding: 20px 24px; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6); color: #fff; font-family: inherit;">
+            <div style="background: var(--surface-elevated, #0f172a); border: 1px solid var(--border-strong, rgba(0, 242, 254, 0.35)); border-radius: 12px; width: 520px; max-width: 90vw; padding: 20px 24px; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28); color: var(--text-primary, #fff); font-family: inherit;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                    <div style="font-weight: 600; font-size: 1rem; color: #00f2fe; display: flex; align-items: center; gap: 8px;">
+                    <div style="font-weight: 600; font-size: 1rem; color: var(--accent-cyan, #0284c7); display: flex; align-items: center; gap: 8px;">
                         <span>🪄 智能解析并回填凭据 (${titleName})</span>
                     </div>
-                    <button type="button" onclick="document.getElementById('smart-paste-modal-overlay').remove()" style="background: transparent; border: none; color: #94a3b8; font-size: 1.2rem; cursor: pointer;">✕</button>
+                    <button type="button" onclick="document.getElementById('smart-paste-modal-overlay').remove()" style="background: transparent; border: none; color: var(--text-secondary, #94a3b8); font-size: 1.2rem; cursor: pointer;">✕</button>
                 </div>
-                <div style="font-size: 0.8rem; color: #94a3b8; line-height: 1.5; margin-bottom: 12px;">
-                    请在浏览器登录对应平台后，按 <b style="color: #cbd5e1;">F12</b> 打开控制台 -> <b style="color: #cbd5e1;">Network</b> -> 点击请求，复制整段 <b style="color: #38bdf8;">Cookie</b> 或完整的 <b style="color: #38bdf8;">Request Headers</b> 粘贴至下方：
+                <div style="font-size: 0.8rem; color: var(--text-secondary, #94a3b8); line-height: 1.5; margin-bottom: 12px;">
+                    请在浏览器登录对应平台后，按 <b>F12</b> 打开控制台 -> <b>Network</b> -> 点击请求，复制整段 <b style="color: var(--accent-cyan, #0284c7);">Cookie</b> 或完整的 <b style="color: var(--accent-cyan, #0284c7);">Request Headers</b> 粘贴至下方：
                 </div>
-                <textarea id="smart-paste-input-raw" rows="6" placeholder="请在此处直接粘贴从浏览器复制的 Cookie 或 Request Headers..." style="width: 100%; box-sizing: border-box; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 8px; color: #fff; padding: 10px; font-size: 0.8rem; font-family: monospace; resize: vertical; outline: none;"></textarea>
+                <textarea id="smart-paste-input-raw" rows="6" placeholder="请在此处直接粘贴从浏览器复制的 Cookie 或 Request Headers..." style="width: 100%; box-sizing: border-box; background: var(--surface-secondary, rgba(0, 0, 0, 0.35)); border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.15)); border-radius: 8px; color: var(--text-primary, #fff); padding: 10px; font-size: 0.8rem; font-family: monospace; resize: vertical; outline: none;"></textarea>
                 <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px;">
-                    <button type="button" onclick="document.getElementById('smart-paste-modal-overlay').remove()" style="background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: #cbd5e1; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 0.82rem;">取消</button>
-                    <button type="button" id="btn-do-smart-parse" style="background: #00f2fe; border: none; color: #0f172a; font-weight: 600; padding: 6px 16px; border-radius: 6px; cursor: pointer; font-size: 0.82rem;">一键识别并填入</button>
+                    <button type="button" class="mini-btn" onclick="document.getElementById('smart-paste-modal-overlay').remove()" style="padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 0.82rem;">取消</button>
+                    <button type="button" id="btn-do-smart-parse" style="background: #0284c7; border: none; color: #fff; font-weight: 600; padding: 6px 16px; border-radius: 6px; cursor: pointer; font-size: 0.82rem;">一键识别并填入</button>
                 </div>
             </div>`;
         document.body.appendChild(overlay);

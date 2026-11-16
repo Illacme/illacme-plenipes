@@ -222,37 +222,40 @@ async def delete_podcast_audio(imprint_id: str, filename: str) -> Dict[str, Any]
     return {"status": "success", "deleted": safe_name}
 
 
+def _find_podcast_file(cache_dir: str, slug: str, base_stem: str, lg: str, style_key: str):
+    """按优先级查找指定语种和风格的播客音频文件"""
+    candidates = [f"{slug}_{lg}_{style_key}.mp3"]
+    if slug != base_stem and base_stem.lower() not in ("index", "readme"):
+        candidates.append(f"{base_stem}_{lg}_{style_key}.mp3")
+    if style_key == "tech_deep":
+        candidates.append(f"{slug}_{lg}.mp3")
+    for name in candidates:
+        p = os.path.join(cache_dir, name)
+        if os.path.isfile(p):
+            return name, p
+    return candidates[0], os.path.join(cache_dir, candidates[0])
+
+
 @router.get("/api/podcast/info")
-async def get_podcast_info(rel_path: str, lang: str = "zh", style: str = "tech_deep") -> Dict[str, Any]:
-    """查询指定稿件是否已生成就绪的播客音频"""
+async def get_podcast_info(rel_path: str, lang: str = "zh", style: str = "tech_deep", langs: str = "") -> Dict[str, Any]:
+    """查询指定稿件是否已生成就绪的播客音频（支持 langs 逗号列表批量探测已生成语种）"""
     engine = get_global_engine()
     imprint_id = getattr(engine, "imprint_id", "default") if engine else "default"
     slug = _resolve_podcast_slug(rel_path, engine)
     base_stem = os.path.splitext(os.path.basename(rel_path))[0]
     cache_dir = _get_audio_cache_dir(engine, imprint_id)
     style_key = style or "tech_deep"
-    filename = f"{slug}_{lang}_{style_key}.mp3"
-    target_path = os.path.join(cache_dir, filename)
-
-    if not os.path.isfile(target_path) and slug != base_stem and base_stem.lower() not in ("index", "readme"):
-        alt_name = f"{base_stem}_{lang}_{style_key}.mp3"
-        if os.path.isfile(os.path.join(cache_dir, alt_name)):
-            filename, target_path = alt_name, os.path.join(cache_dir, alt_name)
-
-    if not os.path.isfile(target_path) and style_key == "tech_deep":
-        legacy_name = f"{slug}_{lang}.mp3"
-        legacy_path = os.path.join(cache_dir, legacy_name)
-        if os.path.isfile(legacy_path):
-            filename, target_path = legacy_name, legacy_path
+    filename, target_path = _find_podcast_file(cache_dir, slug, base_stem, lang, style_key)
+    avail = [c.strip() for c in langs.split(",") if c.strip() and os.path.isfile(_find_podcast_file(cache_dir, slug, base_stem, c.strip(), style_key)[1])] if langs else []
 
     if os.path.isfile(target_path):
         chaps, shownotes = _load_sidecar_info(target_path)
-        return {"status": "success", "exists": True, "data": {
+        return {"status": "success", "exists": True, "available_langs": avail, "data": {
             "filename": filename, "audio_url": f"/api/podcast/audio/{imprint_id}/{filename}",
             "file_size_bytes": os.path.getsize(target_path), "lang": lang, "style": style_key,
             "chapters": chaps, "shownotes_formatted": shownotes
         }}
-    return {"status": "success", "exists": False, "data": None}
+    return {"status": "success", "exists": False, "available_langs": avail, "data": None}
 
 
 @router.get("/api/podcast/bgm_options")

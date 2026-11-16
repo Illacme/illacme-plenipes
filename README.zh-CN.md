@@ -83,7 +83,7 @@
 ![发布中心与电子出版本书架](./docs/assets/workbench_dispatch.png)
 * **🌐 个人独立站免费托管**：一键编译并部署至 GitHub Pages、Cloudflare Pages、Vercel、Netlify 等平台，完成后自动回传真实公网链接。
 * **📚 数字装订与独立书架**：一键生成 **WebBook**、**EPUB 3**、**印刷级 PDF** 与 **可编辑公式 DOCX**，支持多语平行对照排版与品牌级书架隔离（`dist/books/{imprint_id}`）。
-* **🎙️ 播客工坊与电台发行**：支持深度剖析 / 通俗快讯 / 观点交锋 / 单人伴读四种风格，支持 **🎯 聚焦引导**、**语速与主播人设自定义**、**中/英/日三语联产**；内置 **11 种免费开源及商业级 TTS 引擎**（`Edge TTS` 免配即用，`Kokoro`、`ChatTTS`、`CosyVoice`、`Piper` 本地/自建开源，以及 `OpenAI`、`MiniMax`、`火山豆包语音`、`Gemini`、`ElevenLabs`、`Fish Audio` 与硅基流动预设，支持原地试听与自动降级提示），一键生成章节时间轴、合规 `podcast-feed.xml` 并转储至 R2 / S3 / OSS / COS CDN。
+* **🎙️ 播客工坊与电台发行**：支持深度剖析 / 通俗快讯 / 观点交锋 / 单人伴读四种风格，支持 **11 语种双人神经声线自适应选择器**（含 `🎧` 已生成状态标示）、**🎯 聚焦引导**、**语速与主播人设自定义**与**增量批量联产**；内置 **11 种免费开源及商业级 TTS 引擎**（`Edge TTS` 免配即用，`Kokoro`、`ChatTTS`、`CosyVoice`、`Piper` 本地/自建开源，以及 `OpenAI`、`MiniMax`、`火山豆包语音`、`Gemini`、`ElevenLabs`、`Fish Audio` 与硅基流动预设，支持原地试听与自动降级提示），一键生成章节时间轴、合规 `podcast-feed.xml` 并转储至 R2 / S3 / OSS / COS CDN。
 * **🛰️ 30+ 社媒矩阵与自愈账本**：支持微信公众号、小红书、知乎、掘金、Dev.to、Medium、Substack 等；分发失败时可一键重试或直接唤起 Copilot 诊断修复。
 
 #### ⚙️ 4. 治理中心 (`Governance`) & 🎨 设计工坊

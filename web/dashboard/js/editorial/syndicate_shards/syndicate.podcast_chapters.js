@@ -25,19 +25,19 @@
             const sec = parseInt(c.start_seconds || 0, 10);
             const timeStr = _esc(c.start_time || '00:00');
             const title = _esc(c.title || '章节');
-            return `<button type="button" class="mini-btn chapter-jump-pill" onclick="window.seekPodcastAudio(${sec})" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:#cbd5e1;border-radius:20px;padding:3px 10px;font-size:0.75rem;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:5px;transition:all 0.2s ease;">
+            return `<button type="button" class="mini-btn chapter-jump-pill podcast-pill-btn" onclick="window.seekPodcastAudio(${sec})" style="border-radius:20px;padding:3px 10px;font-size:0.75rem;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:5px;">
                 <span style="color:#a855f7;font-family:monospace;font-weight:600;">⏱️ ${timeStr}</span>
                 <span>${title}</span>
             </button>`;
         }).join('');
 
-        return `<div class="podcast-chapters-panel" style="margin-top:12px;background:rgba(15,23,42,0.6);border:1px solid rgba(168,85,247,0.22);border-radius:10px;padding:12px 14px;">
+        return `<div class="podcast-chapters-panel podcast-player-card" style="margin-top:12px;border:1px solid rgba(168,85,247,0.22);border-radius:10px;padding:12px 14px;">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-                <div style="font-size:0.8rem;color:#f8fafc;font-weight:600;display:flex;align-items:center;gap:6px;">
+                <div class="podcast-title" style="font-size:0.8rem;font-weight:600;display:flex;align-items:center;gap:6px;">
                     <span>⏱️ 节目章节时间轴</span>
-                    <span style="font-size:0.7rem;color:#94a3b8;font-weight:normal;">(${chapters.length} 个分段 · 点击快速试听)</span>
+                    <span class="podcast-sub" style="font-size:0.7rem;font-weight:normal;">(${chapters.length} 个分段 · 点击快速试听)</span>
                 </div>
-                <button type="button" class="mini-btn glow-btn" onclick="window.copyPodcastChapters(this)" style="background:linear-gradient(135deg, rgba(168,85,247,0.2) 0%, rgba(99,102,241,0.25) 100%);border:1px solid rgba(168,85,247,0.5);color:#c084fc;padding:3px 10px;font-size:0.74rem;border-radius:6px;cursor:pointer;">
+                <button type="button" class="mini-btn glow-btn" onclick="window.copyPodcastChapters(this)" style="background:linear-gradient(135deg, rgba(168,85,247,0.16) 0%, rgba(99,102,241,0.2) 100%);border:1px solid rgba(168,85,247,0.45);color:#9333ea;padding:3px 10px;font-size:0.74rem;border-radius:6px;cursor:pointer;">
                     📋 复制时间戳 Show Notes
                 </button>
             </div>
@@ -137,29 +137,27 @@
         }
         const listHtml = pending.map((d, i) => `
             <div id="batch-pod-item-${i}" style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-radius:8px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);margin-bottom:6px;font-size:0.82rem;">
-                <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#e2e8f0;"><span style="color:#94a3b8;margin-right:6px;">#${i + 1}</span>${_esc(d.title || d.rel_path)} <span style="font-size:0.72rem;color:#64748b;">(${_esc(d.rel_path)})</span></div>
+                <div class="podcast-title" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><span class="podcast-sub" style="margin-right:6px;">#${i + 1}</span>${_esc(d.title || d.rel_path)} <span class="podcast-sub" style="font-size:0.72rem;">(${_esc(d.rel_path)})</span></div>
                 <span id="batch-pod-stat-${i}" style="font-size:0.74rem;color:#fbbf24;white-space:nowrap;margin-left:10px;">⏳ 待合成</span>
             </div>`).join('');
 
-        bd.innerHTML = `<div style="background:#090d16;border:1px solid rgba(168,85,247,0.35);box-shadow:0 25px 50px -12px rgba(0,0,0,0.8);width:100%;max-width:600px;border-radius:16px;overflow:hidden;display:flex;flex-direction:column;">
-            <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid rgba(255,255,255,0.08);background:rgba(15,23,42,0.85);">
-                <div style="display:flex;align-items:center;gap:10px;"><span style="font-size:1.3rem;">🎙️</span><div><div style="font-size:0.98rem;font-weight:700;color:#f8fafc;">批量合成待处理播客音频 (共 ${pending.length} 篇)</div><div style="font-size:0.74rem;color:#94a3b8;">自动提炼双人对谈剧本并合成 128kbps 伴读 MP3 与章节时间轴</div></div></div>
-                <button type="button" onclick="window.closeBatchPodcastModal()" style="background:none;border:none;color:#94a3b8;font-size:1.1rem;cursor:pointer;">✕</button>
+        const langs = typeof window.getEnabledPodcastLangs === 'function' ? window.getEnabledPodcastLangs() : ['zh', 'en', 'ja'];
+        const langChecks = langs.map((c, idx) => `<label style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" class="batch-pod-lang-cb" value="${c}" ${idx===0?'checked':''}> ${c.toUpperCase()}</label>`).join('');
+        bd.innerHTML = `<div class="podcast-modal-card" style="background:var(--surface-primary,#090d16);color:var(--text-primary,#f8fafc);border:1px solid rgba(168,85,247,0.35);box-shadow:0 25px 50px -12px rgba(0,0,0,0.45);width:100%;max-width:600px;border-radius:16px;overflow:hidden;display:flex;flex-direction:column;">
+            <div class="podcast-modal-header" style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;">
+                <div style="display:flex;align-items:center;gap:10px;"><span style="font-size:1.3rem;">🎙️</span><div><div class="podcast-title" style="font-size:0.98rem;font-weight:700;">批量合成待处理播客音频 (共 ${pending.length} 篇)</div><div class="podcast-sub" style="font-size:0.74rem;">自动提炼双人对谈剧本并合成 128kbps 伴读 MP3 与章节时间轴</div></div></div>
+                <button type="button" class="podcast-sub" onclick="window.closeBatchPodcastModal()" style="background:none;border:none;font-size:1.1rem;cursor:pointer;">✕</button>
             </div>
             <div style="padding:16px 20px;">
                 <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px;padding:8px 12px;background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.25);border-radius:8px;">
-                    <span style="font-size:0.78rem;color:#e2e8f0;font-weight:600;">🌐 衍生语种矩阵:</span>
-                    <div style="display:flex;gap:12px;font-size:0.78rem;color:#cbd5e1;">
-                        <label style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" class="batch-pod-lang-cb" value="zh" checked> 🇨🇳 中文 (zh)</label>
-                        <label style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" class="batch-pod-lang-cb" value="en"> 🇺🇸 English (en)</label>
-                        <label style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" class="batch-pod-lang-cb" value="ja"> 🇯🇵 日本語 (ja)</label>
-                    </div>
+                    <span class="podcast-title" style="font-size:0.78rem;font-weight:600;">🌐 衍生语种矩阵:</span>
+                    <div class="podcast-sub" style="display:flex;gap:12px;font-size:0.78rem;flex-wrap:wrap;">${langChecks}</div>
                 </div>
-                <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:#cbd5e1;margin-bottom:8px;"><span id="batch-podcast-status-text">已就绪，点击下方按钮开始顺序合成</span><span id="batch-podcast-pct">0 / ${pending.length}</span></div>
-                <div style="height:8px;background:rgba(255,255,255,0.08);border-radius:99px;overflow:hidden;margin-bottom:14px;"><div id="batch-podcast-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#a855f7,#38bdf8);transition:width 0.3s ease;"></div></div>
+                <div class="podcast-sub" style="display:flex;justify-content:space-between;font-size:0.8rem;margin-bottom:8px;"><span id="batch-podcast-status-text">已就绪，点击下方按钮开始顺序合成</span><span id="batch-podcast-pct">0 / ${pending.length}</span></div>
+                <div style="height:8px;background:rgba(148,163,184,0.2);border-radius:99px;overflow:hidden;margin-bottom:14px;"><div id="batch-podcast-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#a855f7,#38bdf8);transition:width 0.3s ease;"></div></div>
                 <div style="max-height:260px;overflow-y:auto;padding-right:4px;">${listHtml}</div>
             </div>
-            <div style="display:flex;justify-content:flex-end;gap:10px;padding:12px 20px;border-top:1px solid rgba(255,255,255,0.08);background:rgba(15,23,42,0.5);">
+            <div class="podcast-modal-toolbar" style="display:flex;justify-content:flex-end;gap:10px;padding:12px 20px;">
                 <button type="button" id="batch-podcast-cancel-btn" class="mini-btn" onclick="window.closeBatchPodcastModal()" style="padding:6px 14px;">关闭</button>
                 <button type="button" id="batch-podcast-start-btn" class="primary-btn glow-btn" onclick="window.startBatchPodcastExecution()" style="padding:6px 16px;background:linear-gradient(135deg,#a855f7,#6366f1);border:none;color:#fff;">🚀 开始一键批量合成</button>
             </div>
