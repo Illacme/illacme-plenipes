@@ -187,7 +187,7 @@ window.showPluginLogDrawer = (id, title, status, logs) => {
     if (!drawer) {
         drawer = document.createElement('div');
         drawer.id = 'log-terminal-drawer';
-        drawer.style.cssText = 'position: fixed; top: 0; right: -520px; width: 480px; height: 100vh; background: rgba(10, 10, 15, 0.95); backdrop-filter: blur(16px); border-left: 1px solid var(--glass-border); box-shadow: -10px 0 30px rgba(0,0,0,0.6); z-index: 9999; transition: right 0.35s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column; font-family: monospace;';
+        drawer.style.cssText = 'position: fixed; top: 0; right: -520px; width: 480px; height: 100vh; background: var(--surface-primary, rgba(10, 10, 15, 0.95)); backdrop-filter: blur(16px); border-left: 1px solid var(--glass-border); box-shadow: -10px 0 30px rgba(0,0,0,0.25); z-index: 9999; transition: right 0.35s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column; font-family: monospace;';
         document.body.appendChild(drawer);
     }
 
@@ -218,19 +218,19 @@ window.showPluginLogDrawer = (id, title, status, logs) => {
     window.lastCleanLogText = cleanLogTexts.join('\n');
 
     drawer.innerHTML = `
-        <div class="log-terminal-header" style="padding: 16px 20px; border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3);">
+        <div class="log-terminal-header" style="padding: 16px 20px; border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center; background: var(--surface-secondary, rgba(0,0,0,0.3));">
             <div>
-                <h3 class="log-terminal-title" style="margin: 0; font-size: 1.05rem; color: #fff;">📋 物理连通性日志</h3>
+                <h3 class="log-terminal-title" style="margin: 0; font-size: 1.05rem; color: var(--text-primary, #fff);">📋 物理连通性日志</h3>
                 <span class="log-terminal-subtitle" style="font-size: 0.72rem; color: var(--text-dim);">${title || id.toUpperCase()} 通道演练诊断信息</span>
             </div>
-            <button type="button" class="log-terminal-close-btn" onclick="window.closeLogDrawer()" style="background: transparent; border: none; color: #888; font-size: 1.2rem; cursor: pointer;">✕</button>
+            <button type="button" class="log-terminal-close-btn" onclick="window.closeLogDrawer()" style="background: transparent; border: none; color: var(--text-dim, #888); font-size: 1.2rem; cursor: pointer;">✕</button>
         </div>
-        <div class="log-terminal-body" style="flex: 1; padding: 16px; overflow-y: auto; font-size: 0.78rem; line-height: 1.6; background: #07070a; color: #d1d5db; word-break: break-all;">
+        <div class="log-terminal-body" style="flex: 1; padding: 16px; overflow-y: auto; font-size: 0.78rem; line-height: 1.6; background: #0f172a; color: #e2e8f0; word-break: break-all;">
             ${formattedLogs}
         </div>
-        <div class="log-terminal-footer" style="padding: 12px 16px; border-top: 1px solid var(--glass-border); display: flex; gap: 8px; justify-content: flex-end; background: rgba(0,0,0,0.3);">
-            <button type="button" class="btn-copy-log" onclick="window.copyLogTerminalContent(this)" style="font-size: 0.75rem; background: rgba(0, 242, 255, 0.1); border: 1px solid rgba(0, 242, 255, 0.3); color: var(--neon-cyan); padding: 5px 12px; border-radius: 6px; cursor: pointer; transition: all 0.25s ease;">📋 一键复制日志</button>
-            <button type="button" class="btn-close-log" onclick="window.closeLogDrawer()" style="font-size: 0.75rem; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #fff; padding: 5px 12px; border-radius: 6px; cursor: pointer;">关闭</button>
+        <div class="log-terminal-footer" style="padding: 12px 16px; border-top: 1px solid var(--glass-border); display: flex; gap: 8px; justify-content: flex-end; background: var(--surface-secondary, rgba(0,0,0,0.3));">
+            <button type="button" class="btn-copy-log mini-btn" onclick="window.copyLogTerminalContent(this)" style="font-size: 0.75rem; background: rgba(2, 132, 199, 0.12); border: 1px solid rgba(2, 132, 199, 0.35); color: var(--accent-cyan, #0284c7); padding: 5px 12px; border-radius: 6px; cursor: pointer; transition: all 0.25s ease;">📋 一键复制日志</button>
+            <button type="button" class="btn-close-log mini-btn" onclick="window.closeLogDrawer()" style="font-size: 0.75rem; padding: 5px 12px; border-radius: 6px; cursor: pointer;">关闭</button>
         </div>
     `;
 

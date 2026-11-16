@@ -348,7 +348,7 @@ window.renderDispatchDeadLetters = function (tasks) {
     if (!container) return;
     if (badge) badge.innerText = String(tasks ? tasks.length : 0);
     if (!tasks || tasks.length === 0) {
-        container.innerHTML = `<div class="glass-panel" style="padding: 40px 20px; text-align: center; border-radius: 12px;"><div style="font-size: 2rem; margin-bottom: 8px;">🎉</div><div style="font-weight: 700; font-size: 0.95rem; color: #00ff88;">队列健康 · 0 项死信异常</div><div style="font-size: 0.8rem; color: var(--text-muted, #9ca3af); margin-top: 4px;">所有渠道同步任务均已圆满完成或就绪。</div></div>`;
+        container.innerHTML = `<div class="glass-panel" style="padding: 40px 20px; text-align: center; border-radius: 12px;"><div style="font-size: 2rem; margin-bottom: 8px;">🎉</div><div style="font-weight: 700; font-size: 0.95rem; color: var(--accent-emerald, #10b981);">队列健康 · 0 项死信异常</div><div style="font-size: 0.8rem; color: var(--text-muted, #9ca3af); margin-top: 4px;">所有渠道同步任务均已圆满完成或就绪。</div></div>`;
         return;
     }
     container.innerHTML = tasks.map((t, idx) => {
@@ -395,7 +395,7 @@ window.renderDispatchDeadLetters = function (tasks) {
                     ${ipChipHtml}
                     <details style="margin-top: 4px; font-size: 0.72rem; color: var(--text-muted, #9ca3af);">
                         <summary style="cursor: pointer; opacity: 0.8;">查看底层原始错误栈</summary>
-                        <pre style="margin-top: 4px; padding: 6px 8px; background: rgba(0,0,0,0.3); border-radius: 4px; font-family: var(--font-mono, monospace); white-space: pre-wrap; word-break: break-all;">${safeError}</pre>
+                        <pre style="margin-top: 4px; padding: 6px 8px; background: var(--surface-secondary, rgba(15,23,42,0.06)); border: 1px solid var(--border-subtle, rgba(148,163,184,0.2)); color: var(--text-primary, inherit); border-radius: 4px; font-family: var(--font-mono, monospace); white-space: pre-wrap; word-break: break-all;">${safeError}</pre>
                     </details>
                 </div>
                 <div class="dl-actions">
