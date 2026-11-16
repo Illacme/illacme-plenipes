@@ -1,7 +1,7 @@
 # 🏛️ Illacme Plenipes: Global Private Press
 
-> **All-in-one local-first digital publishing workbench built for sovereign creators.**  
-> One Local Markdown Vault ➔ AI Polyglot Translation & Human Review Lock ➔ Dual-Host Podcast & Adaptive Covers ➔ Polyglot E-Books (EPUB / PDF / DOCX / WebBook) ➔ Free Static Hosting & 30+ Social Channels ➔ MCP-Enabled Editorial Agent.
+> **Local-first digital publishing workbench built for technical writers, indie developers, and solo global teams.**  
+> Turn one local Markdown vault into a polyglot website, dual-host podcast (`RSS 2.0`), multi-format e-books (`EPUB / PDF / DOCX / WebBook`), and 30+ social syndication drafts—with 100% local data ownership and native MCP agent collaboration.
 
 ![Brand Visual Banner](./docs/assets/hero_banner.png)
 

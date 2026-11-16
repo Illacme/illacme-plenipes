@@ -101,6 +101,14 @@ function _buildQuickActions() {
         'else if (typeof window.triggerPreview === \'function\') { window.triggerPreview(); } ' +
         'else if (typeof window.openPreviewSite === \'function\') { window.openPreviewSite(); }';
 
+    var firstDoc = (window.settingsData && Array.isArray(window.settingsData._vault_files) && window.settingsData._vault_files[0])
+        ? (window.settingsData._vault_files[0].rel_path || window.settingsData._vault_files[0])
+        : '';
+    var podcastClick = firstDoc
+        ? 'window.toggleHub(\'hide\'); if(typeof window.openPodcastStudioModal===\'function\'){window.openPodcastStudioModal(\'' + String(firstDoc).replace(/'/g, "\\'") + '\');}else{window.showView(\'tasks\',\'podcast\');}'
+        : 'window.toggleHub(\'hide\'); window.showView(\'tasks\', \'podcast\');';
+    var binderyClick = 'window.toggleHub(\'hide\'); if(typeof window.openBinderyModal===\'function\'){window.openBinderyModal();}else{window.showView(\'tasks\',\'bookshelf\');}';
+
     return '<div class="lpdash-quick-actions">' +
         // [1] 本地极速预览
         '<div class="lpdash-action-card" onclick="' + previewClick + '">' +
@@ -126,28 +134,28 @@ function _buildQuickActions() {
                 '<p class="lpdash-action-desc">浏览编辑文库 Markdown 文稿，管理状态与元数据。</p>' +
             '</div>' +
         '</div>' +
-        // [4] Sovereign 旗舰装帧
-        '<div class="lpdash-action-card" onclick="window.toggleHub(\'hide\'); window.showView(\'settings\', \'themes\');">' +
-            '<span class="lpdash-action-icon">🎭</span>' +
+        // [4] 双人伴读播客工坊 (首屏直达，1分钟听样稿成品)
+        '<div class="lpdash-action-card" onclick="' + podcastClick + '">' +
+            '<span class="lpdash-action-icon">🎙️</span>' +
             '<div class="lpdash-action-body">' +
-                '<div class="lpdash-action-title">装帧主题</div>' +
-                '<p class="lpdash-action-desc">切换 Sovereign / Universal 主题，定制排版组件。</p>' +
+                '<div class="lpdash-action-title">播客工坊</div>' +
+                '<p class="lpdash-action-desc">11 语种双人对话合成、试听与 RSS 2.0 发行。</p>' +
             '</div>' +
         '</div>' +
-        // [5] 出版合规与治理
+        // [5] 数字装订与电子书架
+        '<div class="lpdash-action-card" onclick="' + binderyClick + '">' +
+            '<span class="lpdash-action-icon">📚</span>' +
+            '<div class="lpdash-action-body">' +
+                '<div class="lpdash-action-title">电子书装订</div>' +
+                '<p class="lpdash-action-desc">一键合订导出 EPUB 3、印刷级 PDF、DOCX 与 WebBook。</p>' +
+            '</div>' +
+        '</div>' +
+        // [6] 治理中心与装帧主题
         '<div class="lpdash-action-card" onclick="window.toggleHub(\'hide\'); window.showView(\'settings\');">' +
             '<span class="lpdash-action-icon">⚙️</span>' +
             '<div class="lpdash-action-body">' +
-                '<div class="lpdash-action-title">系统设置</div>' +
-                '<p class="lpdash-action-desc">配置品牌合规、语种矩阵、网址规则与分发渠道。</p>' +
-            '</div>' +
-        '</div>' +
-        // [6] 导览与速查手册 (老创作者全生命周期可用)
-        '<div class="lpdash-action-card" onclick="window.toggleHub(\'hide\'); if(typeof window.startDashboardTour===\'function\'){window.startDashboardTour();}">' +
-            '<span class="lpdash-action-icon">🧭</span>' +
-            '<div class="lpdash-action-body">' +
-                '<div class="lpdash-action-title">导览与手册</div>' +
-                '<p class="lpdash-action-desc">随时重温 6 步工作台导览，或快速查阅排版规范。</p>' +
+                '<div class="lpdash-action-title">治理与主题</div>' +
+                '<p class="lpdash-action-desc">配置品牌合规、装帧主题、语种矩阵与分发渠道。</p>' +
             '</div>' +
         '</div>' +
         '</div>';
@@ -184,6 +192,7 @@ function _renderDashboard(area, ctx) {
             '<div class="lpwiz-footer-note" style="display: flex; justify-content: space-between; align-items: center; padding: 4px 12px; gap: 16px; flex-wrap: wrap;">' +
                 '<div style="display: flex; align-items: center; gap: 8px; font-size: 0.76rem;">' +
                     '已在外部完成配置？<a href="#" onclick="event.preventDefault(); window.governanceContext=null; window.initLaunchpad();" style="color: var(--accent-secondary); font-weight: 600;">点击刷新检测</a> · ' +
+                    '<a href="#" onclick="event.preventDefault(); window.toggleHub(\'hide\'); if(typeof window.startDashboardTour===\'function\'){window.startDashboardTour();}" style="color: var(--text-dim);">🧭 6 步导览</a> · ' +
                     '<a href="#" onclick="event.preventDefault(); window.toggleHub(\'hide\');" style="color: var(--text-dim);">按 Esc 关闭出版领航仪 (快捷键 I 随时唤起)</a>' +
                 '</div>' +
                 '<label class="lp-auto-open-toggle" style="cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-size: 0.72rem; color: var(--text-dim); user-select: none;">' +

@@ -1,7 +1,7 @@
 # 🏛️ Illacme Plenipes: 全球私人出版社 (Global Private Press)
 
-> **专为主权创作者打造的一站式数字出版发行工作台。**  
-> 一份本地 Markdown 原稿 ➔ 多语种翻译与人工校对锁 ➔ 双人伴读播客 & 多画幅封面 ➔ 多语对照电子书（EPUB / PDF / Word / WebBook）➔ 免费独立官网与 30+ 社媒矩阵同步 ➔ 开放 MCP 协议的 AI 出版主编协同。
+> **面向技术作者、独立开发者与出海一人公司的本地优先数字出版工作台。**  
+> 一份本地 Markdown 原稿 ➔ 1 分钟生成多语独立官网、双人伴读播客、多格式电子书（EPUB / PDF / DOCX / WebBook）与 30+ 社媒分发产物，数据 100% 留存本地，并开放 MCP 协议与 AI 主编协同。
 
 ![品牌视觉 Banner](./docs/assets/hero_banner.png)
 
