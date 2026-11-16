@@ -41,6 +41,8 @@ class WatchdogSettings(BaseModel):
     heavy_task_delay: float = Field(0.8, ge=0)
     gc_delay: float = Field(5.0, ge=0)
     handover_delay: float = Field(1.5, ge=0)
+    ready_trigger_only: bool = False
+    auto_podcast_on_ready: bool = True
 
 from core.config.constants import DIST_DIR
 

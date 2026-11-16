@@ -106,13 +106,38 @@ class ChangeHandler(FileSystemEventHandler):
             self._timers[file_path] = timer
             timer.start()
 
+    def _read_frontmatter_state(self, file_path: str):
+        """解析 Frontmatter 状态：返回 (fm_dict, is_draft, is_ready)"""
+        try:
+            from core.utils.text import parse_frontmatter
+            with open(file_path, "r", encoding="utf-8") as f:
+                fm, _, _ = parse_frontmatter(f.read())
+            fm = fm if isinstance(fm, dict) else {}
+        except Exception:
+            fm = {}
+        st = str(fm.get("status", "")).strip().lower()
+        is_draft = (st == "draft") or (fm.get("draft") is True) or (fm.get("publish") is False)
+        is_ready = (st in ("ready", "published", "publish")) or (fm.get("publish") is True)
+        return fm, is_draft, is_ready
+
     def _dispatch_task(self, file_path, prefix, source):
         try:
+            watch_cfg = getattr(getattr(self.engine.config, "system", None), "watchdog_settings", None)
+            fm, is_draft, is_ready = self._read_frontmatter_state(file_path)
+            if getattr(watch_cfg, "ready_trigger_only", False) and (is_draft or not is_ready):
+                tlog.debug(f"⏭️ [静默跳过草稿] {os.path.basename(file_path)} 未标记 status: ready / publish: true")
+                return
             # 🚀 [UI 进度对准] 触发事件以更新遥测面板中的实时进度百分比
             bus.emit("UI_PROGRESS_START", total=1, description=f"正在热更新: {os.path.basename(file_path)}")
             self.engine.sync_document(file_path, prefix, source, is_dry_run=self.args.dry_run, force_sync=self.args.force)
             bus.emit("UI_PROGRESS_ADVANCE", amount=1)
             if not self.args.dry_run:
+                if getattr(watch_cfg, "auto_podcast_on_ready", True) and is_ready and fm.get("podcast") is True:
+                    try:
+                        from core.podcast import auto_synthesize_pending_podcasts
+                        auto_synthesize_pending_podcasts(self.engine)
+                    except Exception as pod_err:
+                        tlog.warning(f"⚠️ [静默播客触发] 自动合成异常: {pod_err}")
                 self._lazy_gc_trigger()
                 self._debounced_heavy_tasks()
                 # 🚀 [V15.9] 触发热加载重载信号
