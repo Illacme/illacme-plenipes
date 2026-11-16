@@ -133,7 +133,11 @@
             <div id="article-syndicate-drawer-header" class="syndicate-drawer-header">
                 <div class="drawer-header-row">
                     <h3 class="syndicate-drawer-title">📢 社交媒体分发</h3>
-                    <button type="button" class="drawer-close-btn" onclick="window.closeArticleSyndicationDrawer()">×</button>
+                    <div class="drawer-header-actions">
+                        <button type="button" class="mini-btn glow-btn" onclick="if(window.currentSyndicatingRelPath && typeof window.openVaultDrawer==='function'){const d=window.currentSyndicatingRelPath;window.closeArticleSyndicationDrawer();window.openVaultDrawer(d);}" title="一键切换至此文稿的网页托管与多语编译抽屉">🌐 网页托管 ⇄</button>
+                        <button type="button" class="mini-btn" onclick="if(window.currentSyndicatingRelPath && typeof window.openPodcastStudioModal==='function'){window.openPodcastStudioModal(window.currentSyndicatingRelPath);}" title="打开此文稿的双人技术播客工坊">🎙️ 播客工坊</button>
+                        <button type="button" class="drawer-close-btn" onclick="window.closeArticleSyndicationDrawer()">×</button>
+                    </div>
                 </div>
                 <div class="drawer-doc-card">
                     目标原稿：<b class="drawer-doc-id">${displayTitle}</b>

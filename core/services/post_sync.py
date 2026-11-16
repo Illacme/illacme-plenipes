@@ -271,12 +271,11 @@ class SovereignDeploymentPlugin(PostSyncTask):
 
 
 class BlogIndexGeneratorPlugin(PostSyncTask):
-    """
-    🚀 [V1.0] 博客归档动态聚合生成插件 (零文库污染)
-    职责：自动扫描文库中的所有博文，为 Universal 及各主题动态聚合生成现代化博客首页。
-    """
+    """🚀 [V1.0] 博客归档与播客伴读资产聚合插件 (在全站部署前完成静态注入)"""
     def run(self, engine, stats: Dict[str, Any], snapshot: Dict[str, Any], args: Any):
         try:
+            from core.podcast import sync_podcast_assets_to_dist
+            sync_podcast_assets_to_dist(engine, snapshot=snapshot)
             adapter = getattr(engine, 'ssg_adapter', None)
             if adapter and adapter.is_framework_engine():
                 return

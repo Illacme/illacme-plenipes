@@ -181,5 +181,62 @@ window.renderPodcastPlatformConfig = (id, cfg = {}) => {
         `;
     }
 
+    if (id === 'podcast_youtube') {
+        return `
+            <div class="api-token-helper" style="margin-bottom: 16px; padding: 14px; border-radius: 10px; border: 1px dashed rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.05);">
+                <h4 style="margin: 0; color: #f87171;">▶️ YouTube Podcasts (Studio) 绑定向导</h4>
+                <p style="margin: 4px 0 0 0; font-size: 0.82rem; color: var(--text-dim); line-height: 1.4;">
+                    Google 官方主力播客网络。在 YouTube Studio 中选择「新建播客 -> 提交 RSS 源」，即可全自动将每期音频与封面转为播客视频列表。
+                </p>
+                <div style="margin-top: 10px;">
+                    <a href="https://studio.youtube.com" target="_blank" rel="noopener" class="mini-btn glow-btn" style="background: #dc2626; color: #fff; font-size: 0.78rem; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+                        🔗 前往 YouTube Studio 绑定 RSS
+                    </a>
+                </div>
+            </div>
+            ${renderSettingsItem('启用 YouTube Podcasts 渠道', 'podcast.podcast_youtube.enabled', !!cfg.enabled, 'checkbox', { description: "激活 YouTube Podcasts 分发状态追踪。" })}
+            ${renderSettingsItem('播客播放列表 ID (Playlist ID)', 'podcast.podcast_youtube.playlist_id', cfg.playlist_id || '', 'text', { placeholder: "例如: PLxxxxxxxxxxxx", description: "YouTube 自动创建的播客专属播放列表 ID。" })}
+            ${renderSettingsItem('节目公开主页 (Podcast URL)', 'podcast.podcast_youtube.podcast_url', cfg.podcast_url || '', 'text', { placeholder: "https://www.youtube.com/playlist?list=...", description: "YouTube Podcasts 公开收听播放列表链接。" })}
+        `;
+    }
+
+    if (id === 'podcast_netease') {
+        return `
+            <div class="api-token-helper" style="margin-bottom: 16px; padding: 14px; border-radius: 10px; border: 1px dashed rgba(225, 29, 72, 0.4); background: rgba(225, 29, 72, 0.05);">
+                <h4 style="margin: 0; color: #fb7185;">🎵 网易云音乐播客 (创作者中心) 认领向导</h4>
+                <p style="margin: 4px 0 0 0; font-size: 0.82rem; color: var(--text-dim); line-height: 1.4;">
+                    国内年轻一代与技术人文核心音频阵地。在网易云音乐创作者中心选择「主播电台 -> RSS 托管认领」，填入本站 RSS 源即可自动同步更新。
+                </p>
+                <div style="margin-top: 10px;">
+                    <a href="https://music.163.com/st/creator" target="_blank" rel="noopener" class="mini-btn glow-btn" style="background: #e11d48; color: #fff; font-size: 0.78rem; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+                        🔗 前往网易云音乐创作者中心
+                    </a>
+                </div>
+            </div>
+            ${renderSettingsItem('启用网易云音乐播客', 'podcast.podcast_netease.enabled', !!cfg.enabled, 'checkbox', { description: "激活网易云音乐播客分发通道。" })}
+            ${renderSettingsItem('网易云播客电台 ID (Radio ID)', 'podcast.podcast_netease.radio_id', cfg.radio_id || '', 'text', { placeholder: "例如: 796001234", description: "网易云音乐分配的播客电台唯一数字编号。" })}
+            ${renderSettingsItem('创作者凭证 (Cookie / Token)', 'podcast.podcast_netease.token', cfg.token || '', 'password', { placeholder: "可选：MUSIC_U Cookie 或开放凭证", description: "用于状态核验与单集介绍同步（RSS 托管模式下可选填）。" })}
+        `;
+    }
+
+    if (id === 'podcast_ximalaya') {
+        return `
+            <div class="api-token-helper" style="margin-bottom: 16px; padding: 14px; border-radius: 10px; border: 1px dashed rgba(249, 115, 22, 0.4); background: rgba(249, 115, 22, 0.05);">
+                <h4 style="margin: 0; color: #fb923c;">📻 喜马拉雅 (主播工作台) 接入向导</h4>
+                <p style="margin: 4px 0 0 0; font-size: 0.82rem; color: var(--text-dim); line-height: 1.4;">
+                    国内综合体量最大的音频流媒体网络。支持在喜马拉雅主播工作台创建有声专辑并通过 RSS 订阅源或音频直传分发。
+                </p>
+                <div style="margin-top: 10px;">
+                    <a href="https://studio.ximalaya.com" target="_blank" rel="noopener" class="mini-btn glow-btn" style="background: #ea580c; color: #fff; font-size: 0.78rem; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+                        🔗 前往喜马拉雅主播工作台
+                    </a>
+                </div>
+            </div>
+            ${renderSettingsItem('启用喜马拉雅渠道', 'podcast.podcast_ximalaya.enabled', !!cfg.enabled, 'checkbox', { description: "激活喜马拉雅播客专辑分发追踪。" })}
+            ${renderSettingsItem('喜马拉雅专辑 ID (Album ID)', 'podcast.podcast_ximalaya.album_id', cfg.album_id || '', 'text', { placeholder: "例如: 51234567", description: "喜马拉雅主播后台分配的专辑唯一 ID。" })}
+            ${renderSettingsItem('创作者凭证 (Cookie / Token)', 'podcast.podcast_ximalaya.token', cfg.token || '', 'password', { placeholder: "可选：喜马拉雅创作者授权 Cookie", description: "用于专辑状态追踪与 Show Notes 同步。" })}
+        `;
+    }
+
     return '';
 };

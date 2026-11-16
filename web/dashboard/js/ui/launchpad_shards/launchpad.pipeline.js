@@ -13,36 +13,22 @@
      */
     var PIPELINE_I18N = {
         zh: {
-            title: '🚀 出版产出与发行成果',
-            readiness_header: '💡 智能出版就绪诊断与待办处置',
-            books_val: '本出版物',
-            books_size_prefix: '体积 ',
-            hosting_val: '次网站发布',
-            hosting_rate_prefix: '成功率 ',
-            synd_val: '次社媒分发',
-            synd_rate_prefix: '成功率 ',
-            dot_healthy: '运行健康',
-            dot_warning: '存在局部告警',
-            dot_error: '存在较多异常',
-            dot_standby: '就绪待命中',
-            dot_books_ready: '出版物已入架',
-            dot_books_empty: '书架待命中'
+            title: '🚀 出版产出与发行成果', readiness_header: '💡 智能出版就绪诊断与待办处置',
+            books_val: '本出版物', books_size_prefix: '体积 ',
+            hosting_val: '次网站发布', hosting_rate_prefix: '成功率 ',
+            synd_val: '次社媒分发', synd_rate_prefix: '成功率 ',
+            pod_val: '期播客单集', pod_dur_prefix: '时长 ',
+            dot_healthy: '运行健康', dot_warning: '存在局部告警', dot_error: '存在较多异常', dot_standby: '就绪待命中',
+            dot_books_ready: '出版物已入架', dot_books_empty: '书架待命中', dot_pod_ready: '音频已发行', dot_pod_empty: '播客待命中'
         },
         en: {
-            title: '🚀 Publishing Output & Deliverables',
-            readiness_header: '💡 Publishing Readiness & Actions',
-            books_val: 'Publications',
-            books_size_prefix: 'Size: ',
-            hosting_val: 'Hosted Deploys',
-            hosting_rate_prefix: 'Success: ',
-            synd_val: 'Social Dispatches',
-            synd_rate_prefix: 'Success: ',
-            dot_healthy: 'Healthy',
-            dot_warning: 'Warning',
-            dot_error: 'Error',
-            dot_standby: 'Standby',
-            dot_books_ready: 'Books Ready',
-            dot_books_empty: 'Bookshelf Empty'
+            title: '🚀 Publishing Output & Deliverables', readiness_header: '💡 Publishing Readiness & Actions',
+            books_val: 'Publications', books_size_prefix: 'Size: ',
+            hosting_val: 'Hosted Deploys', hosting_rate_prefix: 'Success: ',
+            synd_val: 'Social Dispatches', synd_rate_prefix: 'Success: ',
+            pod_val: 'Podcasts', pod_dur_prefix: 'Dur: ',
+            dot_healthy: 'Healthy', dot_warning: 'Warning', dot_error: 'Error', dot_standby: 'Standby',
+            dot_books_ready: 'Books Ready', dot_books_empty: 'Bookshelf Empty', dot_pod_ready: 'Audio Ready', dot_pod_empty: 'Podcast Standby'
         }
     };
 
@@ -95,38 +81,27 @@
         var booksDot = booksCount > 0 ? { cls: 'lpdot-healthy', title: i18n.dot_books_ready } : { cls: 'lpdot-standby', title: i18n.dot_books_empty };
         var hostingDot = _getHealthDot(hostingDeployCount, hostingRate, i18n.dot_standby);
         var syndDot = _getHealthDot(syndCount, syndRate, i18n.dot_standby);
+        var podCount = (typeof stats.podcast_episodes_count === 'number') ? stats.podcast_episodes_count : ((typeof window._dispatchPodcastCount === 'number') ? window._dispatchPodcastCount : 0);
+        var podDur = stats.podcast_duration_display || window._dispatchPodcastDuration || '0 秒';
+        var podDesc = i18n.pod_dur_prefix + podDur;
+        var podDot = podCount > 0 ? { cls: 'lpdot-healthy', title: i18n.dot_pod_ready } : { cls: 'lpdot-standby', title: i18n.dot_pod_empty };
 
-        return '<div class="lpdash-pipeline-card lpdash-delta-card">' +
-            '<div class="lpdash-delta-grid">' +
-                // 1. 电子出版书架数量与文件体积
-                '<div class="lpdash-delta-pill interactive" onclick="window.toggleHub(\'hide\'); window.showView(\'tasks\', \'shelf\');" title="点击进入电子出版书架">' +
-                    '<span class="lpdash-delta-icon">📚</span>' +
-                    '<div class="lpdash-delta-info">' +
-                        '<div class="lpdash-delta-val">' + booksCount + ' ' + i18n.books_val + '<span class="lpdash-pipe-dot ' + booksDot.cls + '" title="' + booksDot.title + '"></span></div>' +
-                        '<div class="lpdash-delta-lbl" title="' + booksDesc + '">' + booksDesc + '</div>' +
-                    '</div>' +
-                '</div>' +
-                // 2. 网站托管发布次数与成功率
-                '<div class="lpdash-delta-pill interactive" onclick="window.toggleHub(\'hide\'); window.showView(\'tasks\', \'hosting\');" title="点击查看网站托管发布">' +
-                    '<span class="lpdash-delta-icon">🌐</span>' +
-                    '<div class="lpdash-delta-info">' +
-                        '<div class="lpdash-delta-val">' + hostingDeployCount + ' ' + i18n.hosting_val + '<span class="lpdash-pipe-dot ' + hostingDot.cls + '" title="' + hostingDot.title + '"></span></div>' +
-                        '<div class="lpdash-delta-lbl" title="' + hostingDesc + '">' + hostingDesc + '</div>' +
-                    '</div>' +
-                '</div>' +
-                // 3. 社交媒体分发次数与成功率
-                '<div class="lpdash-delta-pill interactive" onclick="window.toggleHub(\'hide\'); window.showView(\'tasks\', \'dispatch\');" title="点击查看社交媒体分发">' +
-                    '<span class="lpdash-delta-icon">📡</span>' +
-                    '<div class="lpdash-delta-info">' +
-                        '<div class="lpdash-delta-val">' + syndCount + ' ' + i18n.synd_val + '<span class="lpdash-pipe-dot ' + syndDot.cls + '" title="' + syndDot.title + '"></span></div>' +
-                        '<div class="lpdash-delta-lbl" title="' + syndDesc + '">' + syndDesc + '</div>' +
-                    '</div>' +
-                '</div>' +
-            '</div>' +
-            '</div>';
+        function _pill(tab, title, icon, count, unit, dot, desc) {
+            return '<div class="lpdash-delta-pill interactive" onclick="window.toggleHub(\'hide\'); window.showView(\'tasks\', \'' + tab + '\');" title="' + title + '">' +
+                '<span class="lpdash-delta-icon">' + icon + '</span><div class="lpdash-delta-info">' +
+                '<div class="lpdash-delta-val">' + count + ' ' + unit + '<span class="lpdash-pipe-dot ' + dot.cls + '" title="' + dot.title + '"></span></div>' +
+                '<div class="lpdash-delta-lbl" title="' + desc + '">' + desc + '</div></div></div>';
+        }
+
+        return '<div class="lpdash-pipeline-card lpdash-delta-card"><div class="lpdash-delta-grid">' +
+            _pill('shelf', '点击进入电子出版书架', '📚', booksCount, i18n.books_val, booksDot, booksDesc) +
+            _pill('hosting', '点击查看网站托管发布', '🌐', hostingDeployCount, i18n.hosting_val, hostingDot, hostingDesc) +
+            _pill('dispatch', '点击查看社交媒体分发', '📡', syndCount, i18n.synd_val, syndDot, syndDesc) +
+            _pill('podcast', '点击进入播客平台分发', '🎙️', podCount, i18n.pod_val, podDot, podDesc) +
+            '</div></div>';
     }
 
-    // 静默预取分发与托管真实统计
+    // 静默预取分发、托管与播客真实统计
     (async function _prefetchOutputStats() {
         if (typeof window.apiFetch !== 'function') return;
         try {
@@ -144,8 +119,13 @@
         } catch (_) {}
         try {
             var hp = await window.apiFetch('/api/dispatch/hosting/overview');
-            if (hp && hp.pagination && typeof hp.pagination.total === 'number') {
-                window._hostingDeployTotal = hp.pagination.total;
+            if (hp && hp.pagination && typeof hp.pagination.total === 'number') window._hostingDeployTotal = hp.pagination.total;
+        } catch (_) {}
+        try {
+            var pp = await window.apiFetch('/api/podcast/overview');
+            if (pp && pp.metrics) {
+                window._dispatchPodcastCount = pp.metrics.total_episodes || 0;
+                window._dispatchPodcastDuration = pp.metrics.total_duration_formatted || '0 秒';
             }
         } catch (_) {}
     })();

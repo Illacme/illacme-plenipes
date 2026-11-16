@@ -109,7 +109,17 @@
             'sensitive_filter': { icon: '🚫', color: '#ff4d4d', bg: 'rgba(255, 77, 77, 0.14)', border: 'rgba(255, 77, 77, 0.35)' },
             'ast_processor': { icon: '🧬', color: '#a855f7', bg: 'rgba(168, 85, 247, 0.14)', border: 'rgba(168, 85, 247, 0.35)' },
             'markdown_normalizer': { icon: '📝', color: '#00f2fe', bg: 'rgba(0, 242, 254, 0.14)', border: 'rgba(0, 242, 254, 0.35)' },
-            'epub': { icon: '📖', color: '#10b981', bg: 'rgba(16, 185, 129, 0.14)', border: 'rgba(16, 185, 129, 0.35)' }
+            'epub': { icon: '📖', color: '#10b981', bg: 'rgba(16, 185, 129, 0.14)', border: 'rgba(16, 185, 129, 0.35)' },
+
+            // 🎙️ 播客与音频流媒体平台 (Podcast Platforms)
+            'podcast_hub': { icon: '🎙️', color: '#c084fc', bg: 'rgba(168, 85, 247, 0.15)', border: 'rgba(168, 85, 247, 0.38)' },
+            'podcast_xiaoyuzhou': { icon: '🪐', color: '#38bdf8', bg: 'rgba(56, 189, 248, 0.15)', border: 'rgba(56, 189, 248, 0.38)' },
+            'podcast_apple': { icon: '🍏', color: '#f8fafc', bg: 'rgba(248, 250, 252, 0.14)', border: 'rgba(248, 250, 252, 0.35)' },
+            'podcast_spotify': { icon: '🟢', color: '#4ade80', bg: 'rgba(34, 197, 94, 0.15)', border: 'rgba(34, 197, 94, 0.38)' },
+            'podcast_youtube': { icon: '▶️', color: '#f87171', bg: 'rgba(239, 68, 68, 0.15)', border: 'rgba(239, 68, 68, 0.38)' },
+            'podcast_netease': { icon: '🎵', color: '#fb7185', bg: 'rgba(225, 29, 72, 0.15)', border: 'rgba(225, 29, 72, 0.38)' },
+            'podcast_ximalaya': { icon: '📻', color: '#fb923c', bg: 'rgba(249, 115, 22, 0.15)', border: 'rgba(249, 115, 22, 0.38)' },
+            'podcast_r2_storage': { icon: '☁️', color: '#f38020', bg: 'rgba(243, 128, 32, 0.15)', border: 'rgba(243, 128, 32, 0.38)' }
         };
 
         if (BRAND_DICT[rawId]) return BRAND_DICT[rawId];

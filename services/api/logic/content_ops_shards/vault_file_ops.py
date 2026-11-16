@@ -194,9 +194,39 @@ def move_document_logic(engine, req: dict):
         return {"error": f"物理磁盘稿件搬迁失败: {e}"}
 
     try:
-        engine.meta.remove_document(doc_id)
-        doc_info_clean = {k: v for k, v in doc_info.items() if k != "title"}
-        engine.meta.register_document(new_path, doc_info.get("title") or os.path.basename(new_path), **doc_info_clean)
+        target_title = doc_info.get("title") or os.path.basename(new_path)
+        if hasattr(engine.meta, "rename_document") and engine.meta.get_doc_info(doc_id):
+            engine.meta.rename_document(doc_id, new_path, new_title=target_title)
+        else:
+            engine.meta.remove_document(doc_id)
+            doc_info_clean = {k: v for k, v in doc_info.items() if k != "title"}
+            engine.meta.register_document(new_path, target_title, **doc_info_clean)
+
+        # 🪐 同步迁移内存中的双链拓扑与 3D 知识星谱节点及入边引用，杜绝旧路径幽灵节点与断链
+        if hasattr(engine, "link_graph") and isinstance(engine.link_graph, dict):
+            if doc_id in engine.link_graph:
+                node_lg = engine.link_graph.pop(doc_id)
+                if isinstance(node_lg, dict) and isinstance(node_lg.get("metadata"), dict):
+                    node_lg["metadata"]["title"] = target_title
+                engine.link_graph[new_path] = node_lg
+            for _, lg_val in engine.link_graph.items():
+                if isinstance(lg_val, dict) and isinstance(lg_val.get("links"), list):
+                    lg_val["links"] = [new_path if lk == doc_id else lk for lk in lg_val["links"]]
+        if hasattr(engine, "knowledge_graph") and hasattr(engine.knowledge_graph, "nodes"):
+            with engine.knowledge_graph._lock:
+                if isinstance(engine.knowledge_graph.nodes, dict):
+                    if doc_id in engine.knowledge_graph.nodes:
+                        kg_node = engine.knowledge_graph.nodes.pop(doc_id)
+                        if isinstance(kg_node, dict):
+                            kg_node["title"] = target_title
+                        engine.knowledge_graph.nodes[new_path] = kg_node
+                    for _, kn in engine.knowledge_graph.nodes.items():
+                        if not isinstance(kn, dict): continue
+                        for edge_key in ("connections", "manual_connections"):
+                            edges = kn.get(edge_key)
+                            if isinstance(edges, dict) and doc_id in edges:
+                                edges[new_path] = edges.pop(doc_id)
+                    engine.knowledge_graph.save(debounce=False)
     except Exception as e:
         return {"success": True, "doc_id": doc_id, "new_path": new_path, "warning": f"SQLite 元数据平滑继承时出现细微抖动: {e}"}
 

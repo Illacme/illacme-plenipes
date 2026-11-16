@@ -6,17 +6,9 @@
 
 const _resolveLedgerLang = (c, n, i) => {
     const clean = String(c || '').trim().toLowerCase();
-    if (!clean || clean === 'docs' || clean === 'doc') {
-        return { name: '简体中文', icon: '🇨🇳', code: 'zh-Hans' };
-    }
-    // 归一化简体中文
-    if (['zh', 'zh-hans', 'zh-cn', 'zh-sg', 'cmn', 'cmn-hans'].includes(clean)) {
-        return { name: '简体中文', icon: '🇨🇳', code: 'zh-Hans' };
-    }
-    // 归一化繁体中文
-    if (['zh-hant', 'zh-tw', 'zh-hk', 'cmn-hant'].includes(clean)) {
-        return { name: '繁體中文', icon: '🇭🇰', code: 'zh-Hant' };
-    }
+    if (!clean || clean === 'docs' || clean === 'doc') return { name: '简体中文', icon: '🇨🇳', code: 'zh-Hans' };
+    if (['zh', 'zh-hans', 'zh-cn', 'zh-sg', 'cmn', 'cmn-hans'].includes(clean)) return { name: '简体中文', icon: '🇨🇳', code: 'zh-Hans' };
+    if (['zh-hant', 'zh-tw', 'zh-hk', 'cmn-hant'].includes(clean)) return { name: '繁體中文', icon: '🇭🇰', code: 'zh-Hant' };
 
     // 只有当传入的名称不是单纯的大写代码、且不等于 code 时，才视作显式自定义母语名称
     const isCodeLike = n && (String(n).trim().toLowerCase() === clean || String(n).trim().toLowerCase() === clean.replace(/[-_]/g, ''));
@@ -308,6 +300,7 @@ window.renderDispatchLedgerTable = function (records, totalItems, currentPage, t
                                 </div>
                                 <div style="display: flex; gap: 8px; align-items: center;">
                                     ${magicBtnHtml}
+                                    <button class="secondary-btn" onclick="if(typeof window.askCopilotToDiagnoseTask==='function') window.askCopilotToDiagnoseTask('${safePath}', '${targetId}', '${friendlyMsg.replace(/'/g, "\\'")}');" title="唤醒主编智能体自动分析报错并提供修复方案" style="padding: 3px 10px; font-size: 0.74rem; border-color: var(--neon-cyan-30); color: var(--accent-secondary);"><span>🤖 AI 诊断</span></button>
                                     <button class="secondary-btn" onclick="window.navToChannelConfig('${targetId}')" style="padding: 3px 10px; font-size: 0.74rem;"><span>🔑 检查渠道授权</span></button>
                                     <button class="secondary-btn danger" onclick="window.clearSingleDeadLetterTask('${safePath}', '${targetId}'); if(typeof window.toggleLedgerDiagnostic==='function') window.toggleLedgerDiagnostic('${diagRowId}', '${safeTaskKey}');" title="清除并忽略当前异常状态" style="padding: 3px 10px; font-size: 0.74rem;"><span>🧹 忽略异常</span></button>
                                     <button class="primary-btn glow-btn" id="diag-${retryBtnId}" onclick="window.retrySingleLedgerTask('${safePath}', '${targetId}', '${langCode}', '${retryBtnId}', '${rowId}', '${diagRowId}')" style="padding: 3px 12px; font-size: 0.74rem; font-weight: 700;"><span>🔄 立即重发此任务</span></button>
@@ -407,6 +400,7 @@ window.renderDispatchDeadLetters = function (tasks) {
                 </div>
                 <div class="dl-actions">
                     ${magicBtnHtml}
+                    <button class="secondary-btn" onclick="if(typeof window.askCopilotToDiagnoseTask==='function') window.askCopilotToDiagnoseTask('${safePath}', '${targetId}', '${friendlyMsg.replace(/'/g, "\\'")}');" style="padding: 5px 12px; font-size: 0.78rem; border-color: var(--neon-cyan-30); color: var(--accent-secondary);"><span>🤖 AI 诊断修复</span></button>
                     <button class="secondary-btn" onclick="if(typeof window.openSyndicateLivePreviewModal==='function') window.openSyndicateLivePreviewModal('${safePath}', '${targetId}');" style="padding: 5px 12px; font-size: 0.78rem;"><span>👁️ 预览排版</span></button>
                     <button class="secondary-btn" onclick="window.navToChannelConfig('${targetId}')" style="padding: 5px 12px; font-size: 0.78rem;"><span>🔑 检查渠道授权</span></button>
                     <button class="secondary-btn danger" onclick="window.clearSingleDeadLetterTask('${safePath}', '${targetId}')" style="padding: 5px 12px; font-size: 0.78rem;"><span>🗑️ 移出死信</span></button>

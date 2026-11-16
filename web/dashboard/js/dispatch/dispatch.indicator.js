@@ -22,12 +22,15 @@ window.updateDispatchIndicator = function (overviewData) {
 
     const summary = (overviewData && overviewData.summary) || {};
     const fullSiteState = window._fullSitePublishState || {};
+    const aiState = window._activeAiStatus || {};
+    const aiActiveCount = Number(aiState.active_count || 0);
     const isPublishing = Boolean(overviewData && overviewData.is_publishing) || Boolean(fullSiteState.isPublishing) || Boolean(window._isPublishPreviewActive);
     const failedCount = Number(summary.total_failed || 0);
     const activeCount = Number(summary.active_count || 0);
 
     window._dispatchIndicatorState = {
         isPublishing,
+        aiActiveCount,
         failedCount,
         activeCount,
         lastUpdate: Date.now()
@@ -41,12 +44,19 @@ window.updateDispatchIndicator = function (overviewData) {
         label.innerText = fullSiteState.isPublishing ? '全站发布中' : '正在分发';
         pill.className = 'indicator-pill';
         if (fullSiteState.isPublishing && fullSiteState.stage > 0 && fullSiteState.stage <= 4) {
-            pill.innerText = `步骤 ${fullSiteState.stage}/4`;
+            pill.innerText = aiActiveCount > 0 ? `步骤 ${fullSiteState.stage}/4 · AI×${aiActiveCount}` : `步骤 ${fullSiteState.stage}/4`;
         } else {
-            pill.innerText = activeCount > 0 ? `${activeCount} 篇` : '进行中';
+            pill.innerText = activeCount > 0 ? `${activeCount} 篇` : (aiActiveCount > 0 ? `AI×${aiActiveCount}` : '进行中');
         }
         pill.style.display = 'inline-block';
         btn.title = '全站发布正在执行中，点击查看实时流水线与步骤进度';
+    } else if (aiActiveCount > 0) {
+        btn.classList.add('is-running');
+        label.innerText = '算力推理中';
+        pill.className = 'indicator-pill';
+        pill.innerText = `${aiActiveCount} 项`;
+        pill.style.display = 'inline-block';
+        btn.title = `当前有 ${aiActiveCount} 项 AI 算力请求正在执行，点击查看详情或紧急熔断`;
     } else if (failedCount > 0) {
         btn.classList.add('is-warning');
         label.innerText = '分发待自愈';
@@ -75,6 +85,14 @@ window.refreshDispatchIndicator = async function () {
             apiFetch('/api/system/sync/status').catch(() => null)
         ]);
 
+        if (syncRes) {
+            window._activeAiStatus = {
+                active_count: Number(syncRes.ai_active_count || 0),
+                queue_size: Number(syncRes.ai_queue_size || 0),
+                tasks: Array.isArray(syncRes.ai_tasks) ? syncRes.ai_tasks : []
+            };
+        }
+
         if (syncRes && syncRes.is_publishing) {
             if (!window._fullSitePublishState) window._fullSitePublishState = {};
             window._fullSitePublishState.isPublishing = true;
@@ -94,11 +112,33 @@ window.refreshDispatchIndicator = async function () {
             if (typeof window.renderPopoverContent === 'function' && window._isPopoverOpen) {
                 window.renderPopoverContent(res);
             }
-        } else if (window._fullSitePublishState?.isPublishing) {
+        } else if (window._fullSitePublishState?.isPublishing || (window._activeAiStatus && window._activeAiStatus.active_count > 0)) {
             window.updateDispatchIndicator({});
         }
     } catch (e) {
         console.warn("⚠️ 刷新分发指示器跳过:", e);
+    }
+};
+
+/**
+ * 紧急熔断所有在途 AI 算力请求与同步队列
+ */
+window.abortActiveAiTasks = async function (btn) {
+    if (btn) { btn.disabled = true; btn.innerText = '⏳ 熔断中...'; }
+    try {
+        if (typeof window.abortSync === 'function' && window._fullSitePublishState?.isPublishing) {
+            await window.abortSync();
+        } else if (typeof apiFetch === 'function') {
+            const res = await apiFetch('/api/system/sync/abort', { method: 'POST' });
+            const cnt = (res && res.aborted_ai_calls) || 0;
+            if (typeof showToast === 'function') showToast(`🛑 已紧急熔断 ${cnt > 0 ? cnt + ' 项' : ''}在途 AI 算力请求并清空队列`, 'warning');
+        }
+        window._activeAiStatus = { active_count: 0, queue_size: 0, tasks: [] };
+        await window.refreshDispatchIndicator();
+    } catch (e) {
+        if (typeof showToast === 'function') showToast('熔断请求异常: ' + (e.message || e), 'error');
+    } finally {
+        if (btn) { btn.disabled = false; btn.innerText = '🛑 紧急熔断 AI'; }
     }
 };
 

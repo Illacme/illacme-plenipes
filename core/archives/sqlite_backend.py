@@ -203,4 +203,29 @@ class SQLiteBackend(SQLiteReviewMixin, SQLiteSyndicationMixin, SQLiteMaintenance
         with self._get_conn() as conn:
             conn.execute("DELETE FROM documents WHERE rel_path = ?", (rel_path,))
             conn.execute("DELETE FROM translations WHERE rel_path = ?", (rel_path,))
+            conn.execute("DELETE FROM translation_reviews WHERE doc_id = ?", (rel_path,))
+            conn.execute("DELETE FROM syndication_queue WHERE rel_path = ?", (rel_path,))
+            conn.execute("DELETE FROM syndication_records WHERE rel_path = ?", (rel_path,))
+            conn.execute("DELETE FROM visual_assets WHERE rel_path = ?", (rel_path,))
+
+    def rename_document(self, old_rel_path, new_rel_path, new_title=None):
+        """🔄 原子化无损重命名/迁移文档全表关联记录（零译文与物权丢失）"""
+        if not old_rel_path or not new_rel_path or old_rel_path == new_rel_path:
+            return False
+        with self._get_conn() as conn:
+            conn.execute("DELETE FROM documents WHERE rel_path = ?", (new_rel_path,))
+            if new_title:
+                conn.execute("UPDATE documents SET rel_path = ?, title = ? WHERE rel_path = ?", (new_rel_path, new_title, old_rel_path))
+            else:
+                conn.execute("UPDATE documents SET rel_path = ? WHERE rel_path = ?", (new_rel_path, old_rel_path))
+            conn.execute("DELETE FROM translations WHERE rel_path = ?", (new_rel_path,))
+            conn.execute("UPDATE translations SET rel_path = ? WHERE rel_path = ?", (new_rel_path, old_rel_path))
+            conn.execute("DELETE FROM translation_reviews WHERE doc_id = ?", (new_rel_path,))
+            conn.execute("UPDATE translation_reviews SET doc_id = ? WHERE doc_id = ?", (new_rel_path, old_rel_path))
+            conn.execute("DELETE FROM syndication_queue WHERE rel_path = ?", (new_rel_path,))
+            conn.execute("UPDATE syndication_queue SET rel_path = ? WHERE rel_path = ?", (new_rel_path, old_rel_path))
+            conn.execute("DELETE FROM syndication_records WHERE rel_path = ?", (new_rel_path,))
+            conn.execute("UPDATE syndication_records SET rel_path = ? WHERE rel_path = ?", (new_rel_path, old_rel_path))
+            conn.execute("UPDATE visual_assets SET rel_path = ? WHERE rel_path = ?", (new_rel_path, old_rel_path))
+        return True
 

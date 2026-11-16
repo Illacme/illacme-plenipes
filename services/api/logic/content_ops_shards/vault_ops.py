@@ -84,11 +84,10 @@ def search_vault_logic(engine, q: str = "", page: int = 1, limit: int = 50, fold
                             engine.meta.sqlite.update_document_metadata(rp, {"cover": cov})
                 except Exception: pass
 
-        cand_prefixes = [s for s in (d.get("slug"), base_name) if s]
-        d["has_podcast_audio"] = any(
-            f.endswith(".mp3") and any(f.startswith(f"{p}_") for p in cand_prefixes)
-            for f in cached_audios
-        )
+        path_slug = os.path.splitext(rp.replace("\\", "/").strip("/"))[0].lower().replace("/", "__")
+        is_sub_idx = bool(os.path.dirname(rp)) and base_name.lower() in ("index", "readme")
+        cand_prefixes = [path_slug] if is_sub_idx else [s for s in (path_slug, d.get("slug"), base_name) if s]
+        d["has_podcast_audio"] = any(f.endswith(".mp3") and any(f.startswith(f"{p}_") for p in cand_prefixes) for f in cached_audios)
     return {"items": docs, "total": total}
 
 

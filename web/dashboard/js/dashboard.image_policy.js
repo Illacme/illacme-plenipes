@@ -44,10 +44,15 @@
             <div class="node-unit-container" style="display: flex; flex-direction: column; gap: 20px;">
                 <!-- 1. 策略选择卡片网格 -->
                 <div class="glass-panel" style="padding: 20px; border-radius: 12px; border: 1px solid var(--glass-border);">
-                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; gap: 12px; flex-wrap: wrap;">
                         <div>
                             <h3 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: var(--text-main);">🖼️ 默认封面生成策略</h3>
                             <p style="margin: 4px 0 0 0; font-size: 0.8rem; color: var(--text-muted);">当文稿内容不含图片时，自动化出版管线与社媒分发所采用的默认封面供给模式。</p>
+                        </div>
+                        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                            <button type="button" class="secondary-btn" onclick="if(typeof window.showView==='function') window.showView('design', 'workspace');" style="padding: 5px 10px; font-size: 0.76rem;" title="前往设计中心 · 智能生图工作台"><span>🪄 智能生图工作台 ↗</span></button>
+                            <button type="button" class="secondary-btn" onclick="if(typeof window.showView==='function') window.showView('design', 'providers');" style="padding: 5px 10px; font-size: 0.76rem;" title="前往设计中心 · 配置 AI 与正版摄影图源 API"><span>⚙️ 配置生图引擎 ↗</span></button>
+                            <button type="button" class="secondary-btn" onclick="if(typeof window.showView==='function') window.showView('design', 'assets');" style="padding: 5px 10px; font-size: 0.76rem;" title="前往设计中心 · 浏览与管理已生成的封面资产"><span>🗄️ 媒体资产图库 ↗</span></button>
                         </div>
                     </div>
                     <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px;">

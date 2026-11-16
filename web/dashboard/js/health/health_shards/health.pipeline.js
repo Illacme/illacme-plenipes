@@ -41,20 +41,27 @@ window.renderPipelineSenses = function (data, s, pubMode, currentModeMeta) {
         const aiProvider = data.ai?.provider || 'AI';
         const isAiOnline = data.ai_status !== 'degraded' && data.ai_status !== 'offline';
 
+        const pipeLabelI18n = pipeCapI18n && typeof pipeCapI18n.querySelector === 'function' ? pipeCapI18n.querySelector('.pipe-label') : null;
         if (pubMode === 'basic') {
+            if (pipeLabelI18n) pipeLabelI18n.innerText = '2. 出版模式 (基础单语)';
             pipeValI18n.innerText = `母语 (${sourceLang}) · 基础物理离线`;
             if (pipeDotI18n) pipeDotI18n.className = 'pipe-dot standby';
+            if (pipeCapI18n) pipeCapI18n.onclick = () => window.showView('settings', 'modes');
         } else if (pubMode === 'enhanced') {
+            if (pipeLabelI18n) pipeLabelI18n.innerText = '2. 多语言与 SEO';
             pipeValI18n.innerText = `母语 (${sourceLang}) · 智能 SEO 增强`;
             if (pipeDotI18n) pipeDotI18n.className = isAiOnline ? 'pipe-dot healthy' : 'pipe-dot warning';
+            if (pipeCapI18n) pipeCapI18n.onclick = () => window.showView('settings', 'localization');
         } else {
+            if (pipeLabelI18n) pipeLabelI18n.innerText = '2. 多语言翻译';
             pipeValI18n.innerText = targets.length > 0 ? `母语 (${sourceLang}) ➔ ${targets.length} 目标语种` : `母语 (${sourceLang}) · 全球分发待命`;
             if (pipeDotI18n) pipeDotI18n.className = isAiOnline ? 'pipe-dot healthy' : 'pipe-dot warning';
+            if (pipeCapI18n) pipeCapI18n.onclick = () => window.showView('settings', 'localization');
         }
 
         if (pipeCapI18n) {
-            pipeCapI18n.setAttribute('data-tip', `2. 多语言 (${targets.length > 0 ? targets.length + '语种' : '单语'})`);
-            pipeCapI18n.title = `🌍 2. 多语言翻译 (Multilingual Translation)\n────────────────────────\n• 出版模式：${currentModeMeta.icon} ${currentModeMeta.title} (${currentModeMeta.en})\n• 母语言：${sourceLang.toUpperCase()}\n• 目标语种：${targets.length > 0 ? targets.join(', ').toUpperCase() : '未配置目标语种 (仅母语出版)'}\n• 算力基座：${aiProvider} (${isAiOnline ? '🟢 在线' : '🟡 待命'})\n\n💡 点击一键直达多语种治理与翻译风格配置`;
+            pipeCapI18n.setAttribute('data-tip', pubMode === 'basic' ? '2. 出版模式 (单语离线)' : `2. 多语言 (${targets.length > 0 ? targets.length + '语种' : '单语'})`);
+            pipeCapI18n.title = `🌍 2. ${pubMode === 'basic' ? '出版模式与单语离线' : '多语言翻译 (Multilingual Translation)'}\n────────────────────────\n• 出版模式：${currentModeMeta.icon} ${currentModeMeta.title} (${currentModeMeta.en})\n• 母语言：${sourceLang.toUpperCase()}\n• 目标语种：${targets.length > 0 ? targets.join(', ').toUpperCase() : '未配置目标语种 (仅母语出版)'}\n• 算力基座：${aiProvider} (${isAiOnline ? '🟢 在线' : '🟡 待命'})\n\n💡 点击一键直达${pubMode === 'basic' ? '出版模式切换' : '多语种治理与翻译风格配置'}`;
         }
     }
 

@@ -81,8 +81,8 @@ window.ensureLeftSidebarMounted = function () {
                 </div>
 
                 <!-- 阶段 5: 独立站托管 (优先于社媒) -->
-                <div class="pipeline-capsule" id="pipe-cap-hosting" data-tip="5. 独立站托管" onclick="window.showView('plugins', 'hosting')"
-                    title="点击一键直达独立站全站托管与云端部署配置">
+                <div class="pipeline-capsule" id="pipe-cap-hosting" data-tip="5. 独立站托管" onclick="window.showView('tasks', 'hosting')"
+                    title="点击一键直达发布中心 · 独立站全站托管控制台">
                     <div class="pipe-icon">🌐</div>
                     <div class="pipe-data">
                         <div class="pipe-label">5. 独立站托管</div>
@@ -92,14 +92,20 @@ window.ensureLeftSidebarMounted = function () {
                 </div>
 
                 <!-- 阶段 6: 社交平台同步 (独立站上线后全网广播) -->
-                <div class="pipeline-capsule" id="pipe-cap-syndication" data-tip="6. 社交平台同步" onclick="if(typeof window.openDispatchHub==='function'){window.openDispatchHub();}else{window.showView('plugins', 'publisher');}"
-                    title="点击一键唤起多平台社交媒体同步与广播中枢">
+                <div class="pipeline-capsule" id="pipe-cap-syndication" data-tip="6. 社交平台同步" onclick="window.showView('tasks', 'social')"
+                    title="点击一键直达发布中心 · 多平台社交媒体分发控制台">
                     <div class="pipe-icon">🚀</div>
                     <div class="pipe-data">
                         <div class="pipe-label">6. 社交平台同步</div>
                         <div class="pipe-value" id="pipe-val-syndication"><span class="pipe-skeleton"></span></div>
                     </div>
                     <div class="pipe-dot standby" id="pipe-dot-syndication"></div>
+                </div>
+
+                <!-- 📚 衍生出版产物快捷双胶囊 (电子书架 & 播客电台) -->
+                <div class="pipeline-deliverables-bar" style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 4px;">
+                    <button type="button" class="mini-btn glow-btn" id="pipe-btn-shelf" onclick="window.showView('tasks', 'shelf')" title="直达发布中心 · 电子出版书架 (EPUB / WebBook / PDF)" style="padding: 5px 6px; font-size: 0.68rem; display: flex; align-items: center; justify-content: center; gap: 4px; border-radius: 6px;"><span>📚</span><span>电子书架</span></button>
+                    <button type="button" class="mini-btn glow-btn" id="pipe-btn-podcast" onclick="window.showView('tasks', 'podcast')" title="直达发布中心 · 播客音频电台与 RSS 订阅源" style="padding: 5px 6px; font-size: 0.68rem; display: flex; align-items: center; justify-content: center; gap: 4px; border-radius: 6px;"><span>🎙️</span><span>播客电台</span></button>
                 </div>
             </div>
         </div>

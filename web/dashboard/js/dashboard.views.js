@@ -65,6 +65,14 @@ window.switchViewDOM = (viewId) => {
         window.stopDispatchLedgerPolling();
     }
 
+    // 📐 窄屏/笔记本视口四栏呼吸感智能减负：进入自带二级侧树视图 (vault / settings) 且屏宽 < 1400px 时，自动收起未在作业的右侧 Copilot 边栏
+    if ((viewId === 'vault' || viewId === 'settings') && typeof window.innerWidth === 'number' && window.innerWidth > 0 && window.innerWidth < 1400) {
+        const appContainer = document.getElementById('app-container');
+        if (appContainer && !appContainer.classList.contains('right-collapsed') && !window._agentStreamingActive) {
+            appContainer.classList.add('right-collapsed');
+        }
+    }
+
     if (typeof window.addAudit === 'function') {
         window.addAudit(`📡 导航: ${viewId.toUpperCase()}`);
     }

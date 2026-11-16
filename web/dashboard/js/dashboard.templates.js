@@ -77,6 +77,7 @@ window.viewTemplates = {
                         <button class="primary-btn glow-btn" id="btn-create-document" style="padding: 6px 12px; font-size: 0.8rem; height: 28px; line-height: 14px;" onclick="window.triggerCreateDocument()" title="物理创建新 Markdown 稿件 (New Document)">＋ 新建原稿</button>
                         <button class="primary-btn glow-btn" id="btn-create-directory" style="padding: 6px 12px; font-size: 0.8rem; height: 28px; line-height: 14px;" onclick="window.triggerCreateDirectory()" title="物理创建新分类文件夹 (New Folder)">＋ 新建目录</button>
                         <button class="action-btn glow-btn" id="btn-bindery-export" style="padding: 6px 12px; font-size: 0.8rem; height: 28px; line-height: 14px; border-color: rgba(16, 185, 129, 0.5); color: #10b981; background: rgba(16, 185, 129, 0.12); cursor: pointer; transition: all 0.3s;" onclick="window.openBinderyModal()" title="将文库文稿合卷导出为国际标准数字出版物 (EPUB / WebBook / PDF)">📚 装订导出</button>
+                        <button class="action-btn glow-btn" id="btn-batch-podcast" style="padding: 6px 12px; font-size: 0.8rem; height: 28px; line-height: 14px; border-color: rgba(168, 85, 247, 0.5); color: #c084fc; background: rgba(168, 85, 247, 0.12); cursor: pointer; transition: all 0.3s;" onclick="window.openBatchPodcastModal()" title="自动扫描并批量合成为开启伴读播客但尚未生成 MP3 的原稿">🎙️ 批量合成播客</button>
                         <button class="mini-btn" id="btn-delete-directory" style="padding: 6px 12px; font-size: 0.8rem; height: 28px; line-height: 14px; background: rgba(220,53,69,0.15); color: #ff6b6b; border: 1px solid rgba(220,53,69,0.3); display: none; cursor: pointer; transition: all 0.3s;" onclick="window.triggerDeleteDirectory()" title="删除当前选中的空目录">🗑️ 删除目录</button>
                     </div>
                     <div class="table-container glass-panel" style="flex: 1; overflow: auto; min-height: 0; border-radius: 12px;">
@@ -204,6 +205,8 @@ window.viewTemplates = {
                         <div class="tab-item cap-tab" data-cat="ebook"><span class="tab-icon">📚</span> 电子出版</div>
                         <div class="tab-item cap-tab" data-cat="hosting"><span class="tab-icon">🌐</span> 全站托管</div>
                         <div class="tab-item cap-tab" data-cat="publisher"><span class="tab-icon">📢</span> 社媒分发</div>
+                        <div class="tab-item cap-tab" data-cat="podcast"><span class="tab-icon">🎙️</span> 播客平台</div>
+                        <div class="tab-item cap-tab" data-cat="tunnel"><span class="tab-icon">🛰️</span> 网络穿透</div>
                         <div class="tab-item cap-tab" data-cat="notification"><span class="tab-icon">🔔</span> 消息通知</div>
                         <div class="tab-item cap-tab" data-cat="editorial"><span class="tab-icon">🧬</span> 流程审计</div>
                     </aside>

@@ -9,12 +9,16 @@ window.getUIDrawersHTML = () => {
 
         <!-- 📡 Web Hosting & Publish Drawer (V68.0 Evolution: 现代右侧滑入抽屉) -->
         <div id="vault-drawer" class="glass-panel dispatch-hub-panel drawer-shell vault-drawer-shell">
-            <!-- 1. 顶部 Header：左侧标题，右侧关闭按钮 (与社媒分发抽屉完全对齐) -->
+            <!-- 1. 顶部 Header：左侧标题，右侧跨通道快捷互跳与关闭按钮 -->
             <div class="drawer-header-row">
                 <h3 class="drawer-header-title">
                     🌐 网页托管发布
                 </h3>
-                <button type="button" class="drawer-close-cross" onclick="window.closeVaultDrawer()">×</button>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <button type="button" class="mini-btn glow-btn" onclick="if(window.currentDocId && typeof window.openArticleSyndicationDrawer==='function'){const d=window.currentDocId;window.closeVaultDrawer();window.openArticleSyndicationDrawer(d,d.split('/').pop().replace(/\.mdx?$/i,''));}" title="一键切换至此文稿的社交媒体分发抽屉" style="padding:3px 8px;font-size:0.72rem;">📢 社媒分发 ⇄</button>
+                    <button type="button" class="mini-btn" onclick="if(window.currentDocId && typeof window.openPodcastStudioModal==='function'){window.openPodcastStudioModal(window.currentDocId);}" title="打开此文稿的双人技术播客工坊" style="padding:3px 8px;font-size:0.72rem;">🎙️ 播客工坊</button>
+                    <button type="button" class="drawer-close-cross" onclick="window.closeVaultDrawer()">×</button>
+                </div>
             </div>
 
             <!-- 2. 目标原稿独立卡片：深色微发光背景 -->

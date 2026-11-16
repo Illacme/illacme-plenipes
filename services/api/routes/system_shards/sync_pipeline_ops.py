@@ -76,19 +76,27 @@ async def trigger_sync_logic(dry_run: bool = False, force: bool = False, sandbox
 
 
 def get_sync_status_logic() -> Dict[str, Any]:
-    """🚀 [V78.8] 查询当前出版流水线是否在运行"""
+    """🚀 [V78.8] 查询当前出版流水线与实时 AI 算力请求是否在运行"""
     from core.runtime.orchestrator import _is_publishing
-    return {"is_publishing": _is_publishing}
+    from core.adapters.ai.network_mixin import get_active_ai_status
+    ai_status = get_active_ai_status()
+    return {
+        "is_publishing": _is_publishing,
+        "ai_active_count": ai_status.get("active_count", 0),
+        "ai_queue_size": ai_status.get("queue_size", 0),
+        "ai_tasks": ai_status.get("tasks", []),
+    }
 
 
 async def abort_sync_logic() -> Dict[str, Any]:
-    """🛑 [V79.0] 中止全量同步接口"""
+    """🛑 [V79.0] 中止全量同步与在途 AI 算力请求接口"""
     engine = _get_engine()
-    if not engine:
-        return {"status": "error", "reason": "Engine not ready"}
-    
-    # 开启中止信号
-    engine.abort_sync = True
+    if engine:
+        engine.abort_sync = True
+
+    # 紧急熔断所有在途 AI 请求与阻塞的 HTTP 会话
+    from core.adapters.ai.network_mixin import abort_all_ai_calls
+    aborted_ai = abort_all_ai_calls()
 
     # 清空后台排队队列
     try:
@@ -103,5 +111,5 @@ async def abort_sync_logic() -> Dict[str, Any]:
     ai_executor.cancel_all_pending()
     asset_executor.cancel_all_pending()
     
-    tlog.warning("🛑 [UI] 已接收到停止同步指令，已向执行器广播中止信号并清空待处理队列。")
-    return {"status": "aborted"}
+    tlog.warning(f"🛑 [UI] 已接收到紧急熔断指令，已中止同步与 {aborted_ai} 项在途 AI 算力请求并清空待处理队列。")
+    return {"status": "aborted", "aborted_ai_calls": aborted_ai}

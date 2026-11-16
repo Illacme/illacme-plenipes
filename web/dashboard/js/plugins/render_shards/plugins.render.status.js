@@ -95,7 +95,7 @@
                     ? { label: '⚠️ 待填密钥', class: 'warning', style: 'background: rgba(245, 158, 11, 0.08); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.25); font-weight: 700; font-size: 0.68rem; padding: 2px 8px; border-radius: 6px; margin-right: 0 !important; white-space: nowrap;' }
                     : { label: '─ 待配置', class: 'info', style: 'color: var(--text-dim); opacity: 0.55; font-weight: 500; font-size: 0.68rem; padding: 2px 8px; border-radius: 6px; margin-right: 0 !important; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03);' };
             }
-            const hasPodId = Boolean(settings.token || settings.podcast_id || settings.apple_id || settings.show_id || settings.podcast_url || settings.show_url);
+            const hasPodId = Boolean(settings.token || settings.podcast_id || settings.apple_id || settings.show_id || settings.playlist_id || settings.radio_id || settings.album_id || settings.podcast_url || settings.show_url);
             if (hasPodId) {
                 return { label: '🟢 配置齐全', class: 'info', style: 'background: rgba(var(--neon-green-rgb), 0.08); color: var(--neon-green); border: 1px solid rgba(var(--neon-green-rgb), 0.25); font-weight: 700; font-size: 0.68rem; padding: 2px 8px; border-radius: 6px; margin-right: 0 !important; white-space: nowrap;' };
             }

@@ -149,6 +149,21 @@ class MetadataManager(LedgerExtensionsMixin):
                 self.file_store.delete_document_metadata(rel_path)
             self._refresh_memory_index()
 
+    def rename_document(self, old_rel_path, new_rel_path, new_title=None):
+        """🔄 原子化迁移文档账本、译文状态、人工精校记录与物理 JSON 镜像"""
+        with self.lock:
+            old_doc = self.sqlite.get_document(old_rel_path)
+            self.sqlite.rename_document(old_rel_path, new_rel_path, new_title=new_title)
+            if hasattr(self, 'file_store') and self.file_store:
+                f_meta = self.file_store.get_document_metadata(old_rel_path) or old_doc or {}
+                self.file_store.delete_document_metadata(old_rel_path)
+                if f_meta:
+                    f_meta["rel_path"] = new_rel_path
+                    if new_title:
+                        f_meta["title"] = new_title
+                    self.file_store.save_document_metadata(new_rel_path, f_meta)
+            self._refresh_memory_index()
+
     def clear_fingerprints_only(self):
         """⚡ [V106.0] 仅清空文档指纹记录，保留 AI Slug、SEO 元数据、译文记录与物理镜像"""
         with self.lock:

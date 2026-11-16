@@ -76,6 +76,9 @@
                 'podcast_xiaoyuzhou': ['1. 小宇宙凭据与节目绑定', '2. Show Notes 自动同步偏好', '3. 连通测试与保存'],
                 'podcast_apple': ['1. Apple ID 与公开主页直达', '2. 目录收录状态与合规', '3. 连通测试与保存'],
                 'podcast_spotify': ['1. Spotify Show ID 与主页绑定', '2. 节目单同步偏好', '3. 连通测试与保存'],
+                'podcast_youtube': ['1. YouTube 播客播放列表绑定', '2. 公开主页与目录同步', '3. 连通测试与保存'],
+                'podcast_netease': ['1. 网易云电台 ID 与凭据绑定', '2. 节目单同步偏好', '3. 连通测试与保存'],
+                'podcast_ximalaya': ['1. 喜马拉雅专辑 ID 与凭据绑定', '2. 有声专栏同步偏好', '3. 连通测试与保存'],
                 'podcast_r2_storage': ['1. 存储服务商与 AK/SK 凭据', '2. 存储空间 (Bucket) 与 CDN 域名', '3. 路径前缀与自动转储 (可选)', '4. 连通测试与保存']
             };
             if (podcastMap[pid]) return podcastMap[pid];

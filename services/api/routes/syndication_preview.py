@@ -92,17 +92,14 @@ async def generate_syndication_preview(req: SyndicationPreviewRequest) -> Dict[s
 
     # 🌐 多语言文稿支持：若指定了非主语种，尝试提取该语种的校对或已译文本
     target_lang = (req.lang or "zh").lower()
+    imprint_id = getattr(engine, "imprint_id", "default") or "default"
     if target_lang != "zh" and hasattr(engine, "meta") and hasattr(engine.meta, "sqlite"):
         try:
-            cur = engine.meta.sqlite.get_cursor()
-            row = cur.execute(
-                "SELECT reviewed_body, reviewed_title, reviewed_desc FROM reviewed_translations WHERE rel_path = ? AND lang_code = ?",
-                (req.rel_path, target_lang)
-            ).fetchone()
-            if row and row[0]:
-                body = row[0]
-                if row[1]: fm_dict["title"] = row[1]
-                if row[2]: fm_dict["description"] = row[2]
+            rev = engine.meta.sqlite.get_review(imprint_id, req.rel_path, target_lang) if hasattr(engine.meta.sqlite, "get_review") else None
+            if rev and rev.get("reviewed_body"):
+                body = rev["reviewed_body"]
+                if rev.get("reviewed_title"): fm_dict["title"] = rev["reviewed_title"]
+                if rev.get("reviewed_desc"): fm_dict["description"] = rev["reviewed_desc"]
         except Exception:
             pass
 
@@ -203,26 +200,35 @@ async def generate_syndication_preview(req: SyndicationPreviewRequest) -> Dict[s
     canonical_url = f"{site_url}/{slug}" if site_url else f"https://your-domain.com/{slug}"
 
     # 🎧 读者消费闭环：伴读音频 / 播客探测
-    imprint_id = getattr(engine, "imprint_id", "default") or "default"
+    raw_imp = getattr(engine, "imprint_id", "default")
+    imprint_id = raw_imp if isinstance(raw_imp, str) and raw_imp else "default"
     audio_info = {"has_audio": False}
-    cache_dir = os.path.join(".plenipes", "cache", "podcasts", imprint_id)
-    doc_slug = os.path.splitext(os.path.basename(req.rel_path))[0]
+    raw_cache = getattr(engine, "cache_dir", None)
+    base_cache = raw_cache if isinstance(raw_cache, str) and raw_cache else os.path.join(os.getcwd(), ".plenipes", "cache")
+    cache_dir = os.path.join(base_cache, "podcasts", imprint_id)
+    base_stem = os.path.splitext(os.path.basename(req.rel_path))[0]
+    path_slug = os.path.splitext(req.rel_path.replace("\\", "/").strip("/"))[0].lower().replace("/", "__")
+    cand_slugs = [path_slug] if (os.path.dirname(req.rel_path) and base_stem.lower() in ("index", "readme")) else [path_slug, base_stem]
     if os.path.isdir(cache_dir):
         matched_file, detected_style = None, "tech_deep"
-        for st in ("tech_deep", "casual_brief", "debate", "solo_read"):
-            candidate = f"{doc_slug}_{target_lang}_{st}.mp3"
-            if os.path.exists(os.path.join(cache_dir, candidate)):
-                matched_file, detected_style = candidate, st
+        for doc_slug in cand_slugs:
+            for st in ("tech_deep", "casual_brief", "debate", "solo_read"):
+                candidate = f"{doc_slug}_{target_lang}_{st}.mp3"
+                if os.path.isfile(os.path.join(cache_dir, candidate)):
+                    matched_file, detected_style = candidate, st
+                    break
+            if matched_file:
                 break
-        if not matched_file:
             cand_legacy = f"{doc_slug}_{target_lang}.mp3"
-            if os.path.exists(os.path.join(cache_dir, cand_legacy)):
+            if os.path.isfile(os.path.join(cache_dir, cand_legacy)):
                 matched_file = cand_legacy
-        if not matched_file:
+                break
             for f in os.listdir(cache_dir):
                 if f.startswith(f"{doc_slug}_") and f.endswith(".mp3"):
                     matched_file = f
                     break
+            if matched_file:
+                break
         if matched_file:
             style_names = {
                 "tech_deep": "深度剖析", "casual_brief": "通俗快讯",

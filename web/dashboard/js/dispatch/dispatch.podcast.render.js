@@ -45,6 +45,7 @@
             const metrics = res.metrics || {};
             const platforms = res.platforms || [];
             const episodes = res.episodes || [];
+            const pendingDocs = res.pending_docs || [];
 
             // 1. 同步顶部 Tab 徽章
             const badge = document.getElementById('badge-podcast-episodes');
@@ -53,8 +54,8 @@
             // 2. 渲染全景 HTML
             container.innerHTML = `
                 ${_buildMetricsHtml(metrics)}
-                ${_buildPlatformsHtml(platforms, metrics)}
-                ${_buildEpisodesHtml(episodes)}
+                ${_buildPlatformsHtml(platforms, metrics, pendingDocs)}
+                ${_buildEpisodesHtml(episodes, pendingDocs)}
             `;
         } catch (err) {
             console.error('🛑 加载播客音频分发中心失败:', err);
@@ -129,7 +130,11 @@
     /**
      * 构建全球与国内主流播客平台矩阵
      */
-    function _buildPlatformsHtml(platforms, m) {
+    function _buildPlatformsHtml(platforms, m, pendingDocs = []) {
+        const pendingCount = pendingDocs.length || m.pending_episodes || 0;
+        const batchBtn = pendingCount > 0
+            ? `<button type="button" class="mini-btn glow-btn" onclick="window.openBatchPodcastModal()" style="font-size: 0.74rem; padding: 3px 10px; background: rgba(168, 85, 247, 0.2); border-color: rgba(168, 85, 247, 0.5); color: #c084fc;">🎙️ 批量合成待处理音频 (${pendingCount})</button>`
+            : `<button type="button" class="mini-btn" onclick="window.openBatchPodcastModal()" style="font-size: 0.74rem; padding: 3px 8px;">🎙️ 巡检待合成音频</button>`;
         const cards = platforms.map(p => {
             const hasMagic = Boolean(p.magic_link);
             const isR2 = p.id === 'podcast_r2_storage';
@@ -166,7 +171,10 @@
                     <span>🧭 全网主流播客平台矩阵</span>
                     <span style="font-size: 0.75rem; font-weight: 400; color: var(--text-muted);">(通过标准 RSS 源一次性认领，全网自动同步)</span>
                 </div>
-                <button type="button" class="mini-btn" onclick="window.showView('plugins', 'podcast')" style="font-size: 0.74rem; padding: 3px 8px;">⚙️ 播客插件配置 ↗</button>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    ${batchBtn}
+                    <button type="button" class="mini-btn" onclick="window.showView('plugins', 'podcast')" style="font-size: 0.74rem; padding: 3px 8px;">⚙️ 播客插件配置 ↗</button>
+                </div>
             </div>
             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px;">
                 ${cards}
@@ -222,10 +230,12 @@
                 <td style="padding: 10px 14px; text-align: center; white-space: nowrap;">
                     <span style="font-family: var(--font-mono, monospace); font-size: 0.82rem; color: var(--text-muted);">${ep.size_formatted}</span>
                 </td>
-                <td style="padding: 10px 14px; text-align: center; min-width: 220px;">
-                    <div style="display: flex; align-items: center; gap: 8px; justify-content: center;">
-                        <audio controls preload="none" src="${audioSrc}" style="height: 28px; max-width: 170px; outline: none;"></audio>
-                        <a href="${audioSrc}" download="${ep.filename}" class="mini-btn" style="height: 28px; line-height: 26px; padding: 0 8px; font-size: 0.74rem; text-decoration: none;" title="下载原版 MP3">⬇️</a>
+                <td style="padding: 10px 14px; text-align: center; min-width: 250px;">
+                    <div style="display: flex; align-items: center; gap: 6px; justify-content: center;">
+                        <audio controls preload="none" src="${audioSrc}" style="height: 28px; max-width: 155px; outline: none;"></audio>
+                        ${ep.rel_path ? `<button type="button" class="mini-btn" onclick="if(window.openPodcastStudioModal) window.openPodcastStudioModal('${escapedRel}');" style="height: 28px; padding: 0 7px; font-size: 0.74rem;" title="打开播客工坊微调台词或重编">🎙️</button>` : ''}
+                        <a href="${audioSrc}" download="${ep.filename}" class="mini-btn" style="height: 28px; line-height: 26px; padding: 0 7px; font-size: 0.74rem; text-decoration: none;" title="下载原版 MP3">⬇️</a>
+                        <button type="button" class="mini-btn danger" onclick="if(window.deletePodcastEpisode) window.deletePodcastEpisode('${ep.filename}');" style="height: 28px; padding: 0 7px; font-size: 0.74rem;" title="物理删除该期单集缓存">🗑️</button>
                     </div>
                 </td>
             </tr>
@@ -234,10 +244,13 @@
 
         return `
         <div style="margin-bottom: 30px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
                 <div style="font-size: 0.95rem; font-weight: 600; color: var(--text-bright); display: flex; align-items: center; gap: 6px;">
                     <span>🎙️ 已发行播客单集货架 (Cataloged Podcast Releases)</span>
                     <span style="font-size: 0.75rem; font-weight: 400; color: var(--text-muted);">(共 ${episodes.length} 期)</span>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button type="button" class="mini-btn" onclick="if(window.batchSyncPodcastsToCdn) window.batchSyncPodcastsToCdn(this);" style="padding: 4px 10px; font-size: 0.76rem; color: var(--accent-primary); border-color: rgba(0, 242, 254, 0.3);" title="将本地全部已合成 MP3 批量上传至 R2/S3 对象存储 CDN">☁️ 批量转储 CDN</button>
                 </div>
             </div>
             <div class="table-container glass-panel" style="border-radius: 12px; overflow: hidden; border: 1px solid var(--glass-border);">
@@ -260,9 +273,6 @@
         `;
     }
 
-    /**
-     * 一键复制播客 RSS Feed 链接到剪贴板
-     */
     window.copyPodcastRssFeed = function (url) {
         if (!url) return;
         const fullUrl = url.startsWith('http') ? url : (window.location.origin + (url.startsWith('/') ? '' : '/') + url);
@@ -270,24 +280,17 @@
             navigator.clipboard.writeText(fullUrl).then(() => {
                 if (typeof window.showToast === 'function') window.showToast('📋 播客 RSS 订阅链接已复制到剪贴板！', 'success');
             }).catch(() => _fallbackCopy(fullUrl));
-        } else {
-            _fallbackCopy(fullUrl);
-        }
+        } else _fallbackCopy(fullUrl);
     };
 
     function _fallbackCopy(text) {
         const ta = document.createElement('textarea');
-        ta.value = text;
-        ta.style.position = 'fixed';
-        ta.style.opacity = '0';
-        document.body.appendChild(ta);
-        ta.select();
+        ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta); ta.select();
         try {
             document.execCommand('copy');
             if (typeof window.showToast === 'function') window.showToast('📋 播客 RSS 订阅链接已复制到剪贴板！', 'success');
-        } catch (e) {
-            prompt('请手动复制播客 RSS 链接：', text);
-        }
+        } catch (e) { prompt('请手动复制播客 RSS 链接：', text); }
         document.body.removeChild(ta);
     }
 })();

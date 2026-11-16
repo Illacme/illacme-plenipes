@@ -248,7 +248,7 @@
                 </div>
             </div>${chapsHtml}`;
         } else {
-            container.innerHTML = `<div style="display:flex;justify-content:flex-end;gap:10px;"><button id="podcast-synthesize-btn" type="button" class="mini-btn glow-btn" onclick="window.triggerPodcastSynthesis()" style="background:linear-gradient(135deg, #a855f7 0%, #6366f1 100%);color:#fff;padding:8px 20px;font-size:0.9rem;border-radius:8px;">🎙️ 一键合成 ${label} 播客单轨 MP3</button></div>`;
+            container.innerHTML = `<div style="display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;"><button type="button" class="mini-btn" onclick="if(window.triggerMultiLangPodcastSynthesis) window.triggerMultiLangPodcastSynthesis('${_esc(_currentRelPath)}','${_selectedStyle}','${_selectedBgm}',this)" style="background:rgba(56,189,248,0.14);color:#38bdf8;border:1px solid rgba(56,189,248,0.35);padding:8px 14px;font-size:0.84rem;border-radius:8px;">🌐 多语联产 (中/英/日)</button><button id="podcast-synthesize-btn" type="button" class="mini-btn glow-btn" onclick="window.triggerPodcastSynthesis()" style="background:linear-gradient(135deg, #a855f7 0%, #6366f1 100%);color:#fff;padding:8px 20px;font-size:0.9rem;border-radius:8px;">🎙️ 一键合成 ${label} 播客单轨 MP3</button></div>`;
         }
     }
 

@@ -126,7 +126,7 @@ async def list_visual_assets(page: int = 1, limit: int = 60, provider: Optional[
         return {"success": True, "assets": [], "total": 0, "page": page, "limit": limit, "total_pages": 1}
 
 @router.delete("/api/design/assets/{asset_id}", dependencies=[Depends(verify_token)])
-async def delete_visual_asset(asset_id: int):
+async def delete_visual_asset(asset_id: int, remove_from_docs: bool = True):
     engine = get_global_engine()
     if not engine or not hasattr(engine, "meta") or not getattr(engine.meta, "sqlite", None):
         raise HTTPException(status_code=500, detail="元数据引擎未初始化")
@@ -138,15 +138,13 @@ async def delete_visual_asset(asset_id: int):
         if not row:
             raise HTTPException(status_code=404, detail="资产不存在或已被删除")
         source_url = row[1] or ""
-        if "/api/design/assets/covers/" in source_url:
-            fn = source_url.split("/api/design/assets/covers/")[-1].split("?")[0]
-            target_file = os.path.join(getattr(engine, "vault_root", os.getcwd()), ".plenipes", "cache", "covers", fn)
-            if os.path.exists(target_file):
-                try: os.remove(target_file)
-                except Exception: pass
-        cur.execute("DELETE FROM visual_assets WHERE id = ?", (asset_id,))
-        conn.commit()
-        return {"success": True, "message": f"资产 #{asset_id} 已成功删除"}
+        if source_url:
+            cur.execute("SELECT id FROM visual_assets WHERE source_url = ?", (source_url,))
+            all_ids = [r[0] for r in cur.fetchall()]
+        else:
+            all_ids = [asset_id]
+        res = await batch_delete_visual_assets(BatchDeleteAssetsRequest(asset_ids=all_ids, remove_from_docs=remove_from_docs))
+        return {"success": True, "message": res.get("message") or f"资产 #{asset_id} 已成功删除", "unbound_docs_count": res.get("unbound_docs_count", 0)}
     except HTTPException: raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"删除失败: {e}")
