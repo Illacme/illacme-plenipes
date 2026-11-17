@@ -243,6 +243,12 @@
                                 placeholder: '例如: http://127.0.0.1:10809 (留空表示直连)',
                                 description: '全站兜底网络代理地址。若发布渠道未配置独立代理，将自动使用此全局代理。填写 direct 表示强行直连。'
                             })}
+                            ${renderSettingsItem('仅就绪文稿触发静默同步', 'system.watchdog_settings.ready_trigger_only', !!data.system?.watchdog_settings?.ready_trigger_only, 'checkbox', {
+                                description: '开启后，在 Obsidian 等本地编辑器保存 Markdown 时将自动跳过草稿，仅当 Frontmatter 标记 status: ready 或 publish: true 时触发同步。'
+                            })}
+                            ${renderSettingsItem('就绪时自动合成伴读播客', 'system.watchdog_settings.auto_podcast_on_ready', data.system?.watchdog_settings?.auto_podcast_on_ready !== false, 'checkbox', {
+                                description: '配合静默守护使用：当文稿就绪且开启 podcast: true 时，后台自动合成伴读播客音频与字幕。'
+                            })}
                             ${renderSettingsItem('第三方 API 网络请求超时 (Timeout)', 'system.network_timeout', data.system?.network_timeout ?? 15, 'number', {
                                 onchange: `window.updateConfigField('system.network_timeout', parseInt(this.value))`,
                                 placeholder: '默认 15 秒',
